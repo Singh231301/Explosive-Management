@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(192, 132, 252, 0.35), transparent 28%),
+    linear-gradient(180deg, #8b5cf6 0%, #6d28d9 28%, #f7f5fb 28%, #f7f5fb 100%);
+  color: #19152a;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.app-shell {
+  margin: 0 auto;
+  min-height: 100vh;
+  max-width: 480px;
+  padding: 16px 16px 96px;
+}
+
+.glass-card {
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.86);
+}
