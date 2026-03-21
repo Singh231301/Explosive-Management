@@ -1,4 +1,4 @@
-﻿import { Prisma, TransactionType } from "@prisma/client";
+import { Prisma, TransactionType } from "@prisma/client";
 import { prisma } from "@/db/prisma";
 import { transactionSchema } from "@/validations/schemas";
 
@@ -11,6 +11,30 @@ function makeReferenceNo(type: TransactionType) {
   const prefix = type === TransactionType.PURCHASE ? "PUR" : type === TransactionType.USAGE ? "USE" : type === TransactionType.TRANSFER ? "TRF" : "ADJ";
   const stamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
   return `${prefix}-${stamp}`;
+}
+
+export function mapTransactionRecord(row: Prisma.TransactionGetPayload<{ include: { items: { include: { product: true } }; supplier: true; customer: true } }>) {
+  return {
+    id: row.id,
+    type: row.type,
+    referenceNo: row.referenceNo,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    supplierId: row.supplierId,
+    customerId: row.customerId,
+    supplierName: row.supplier?.name ?? null,
+    customerName: row.customer?.name ?? null,
+    notes: row.notes,
+    warehouseId: row.warehouseId,
+    totalQuantity: row.items.reduce((sum, item) => sum + Number(item.quantity), 0),
+    items: row.items.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      quantity: Number(item.quantity),
+      pricePerUnit: Number(item.pricePerUnit ?? 0),
+      product: { name: item.product.name }
+    }))
+  };
 }
 
 async function reverseTransaction(tx: Prisma.TransactionClient, transactionId: string) {
@@ -130,15 +154,5 @@ export async function deleteInventoryTransaction(id: string) {
 
 export async function listTransactions() {
   const rows = await prisma.transaction.findMany({ where: { deletedAt: null }, include: { items: { include: { product: true } }, supplier: true, customer: true }, orderBy: { createdAt: "desc" }, take: 50 });
-  return rows.map((row) => ({
-    id: row.id,
-    type: row.type,
-    referenceNo: row.referenceNo,
-    createdAt: row.createdAt.toISOString(),
-    supplierId: row.supplierId,
-    customerId: row.customerId,
-    notes: row.notes,
-    warehouseId: row.warehouseId,
-    items: row.items.map((item) => ({ id: item.id, productId: item.productId, quantity: Number(item.quantity), pricePerUnit: Number(item.pricePerUnit ?? 0), product: { name: item.product.name } }))
-  }));
+  return rows.map(mapTransactionRecord);
 }

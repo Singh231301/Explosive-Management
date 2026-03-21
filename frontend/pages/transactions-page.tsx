@@ -14,6 +14,24 @@ import { t } from "@/lib/i18n";
 import type { TransactionRecord } from "@/lib/types";
 import { formatDate, formatNumber } from "@/lib/utils";
 
+function getTransactionTone(transactionType: TransactionRecord["type"]) {
+  if (transactionType === "PURCHASE") return { label: "+ Buy", className: "bg-emerald-50 text-emerald-700" };
+  if (transactionType === "USAGE") return { label: "- Sell", className: "bg-rose-50 text-rose-700" };
+  return { label: transactionType, className: "bg-slate-100 text-slate-700" };
+}
+
+function getTransactionPartyTag(transaction: TransactionRecord) {
+  if (transaction.type === "PURCHASE") {
+    return { label: transaction.supplierName ? `From: ${transaction.supplierName}` : "From: Supplier", className: "bg-brand-50 text-brand-700" };
+  }
+
+  if (transaction.type === "USAGE") {
+    return { label: transaction.customerName ? `To: ${transaction.customerName}` : "To: Customer", className: "bg-orange-50 text-orange-700" };
+  }
+
+  return { label: transaction.referenceNo, className: "bg-slate-100 text-slate-700" };
+}
+
 export default function TransactionsPage() {
   useRequireAuth();
   const { language } = useLanguage();
@@ -86,15 +104,20 @@ export default function TransactionsPage() {
       <div className="space-y-3">
         {rows.map((row) => {
           const isEditing = editingId === row.id;
+          const tone = getTransactionTone(row.type);
+          const partyTag = getTransactionPartyTag(row);
           return (
             <Card key={row.id} className="bg-white/95">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-bold">{row.items[0]?.product.name || row.referenceNo}</p>
                   <p className="text-sm text-slate-500">Qty {formatNumber(row.totalQuantity || 0)} | {formatDate(row.createdAt)}</p>
                   <p className="text-xs text-slate-400">{row.referenceNo}</p>
                 </div>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">{row.type}</span>
+                <div className="flex flex-col items-end gap-2 text-right">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${partyTag.className}`}>{partyTag.label}</span>
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${tone.className}`}>{tone.label}</span>
+                </div>
               </div>
 
               {isEditing ? (

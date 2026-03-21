@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/db/prisma";
+import { prisma } from "@/db/prisma";
 
 type LimitRule = {
   maxLimit?: number | null;
@@ -59,7 +59,12 @@ export async function getInventorySummary() {
 }
 
 export async function getDashboardMetrics() {
-  const recentTransactions = await prisma.transaction.findMany({ where: { deletedAt: null }, include: { items: { include: { product: true } } }, orderBy: { createdAt: "desc" }, take: 5 });
+  const recentTransactions = await prisma.transaction.findMany({
+    where: { deletedAt: null },
+    include: { items: { include: { product: true } }, supplier: true, customer: true },
+    orderBy: { createdAt: "desc" },
+    take: 5
+  });
 
   return {
     recentTransactions: recentTransactions.map((row) => ({
@@ -67,6 +72,11 @@ export async function getDashboardMetrics() {
       type: row.type,
       referenceNo: row.referenceNo,
       createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      supplierId: row.supplierId,
+      customerId: row.customerId,
+      supplierName: row.supplier?.name ?? null,
+      customerName: row.customer?.name ?? null,
       totalQuantity: row.items.reduce((sum, item) => sum + Number(item.quantity), 0),
       items: row.items.map((item) => ({ id: item.id, quantity: Number(item.quantity), product: { name: item.product.name } }))
     }))

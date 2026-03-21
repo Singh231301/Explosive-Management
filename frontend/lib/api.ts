@@ -1,4 +1,4 @@
-﻿import type { DashboardData, InventoryRow, Party, Product, ReportsData, SessionUser, TransactionRecord } from "@/lib/types";
+import type { DashboardData, InventoryRow, PaginatedTransactions, Party, Product, ReportsData, SessionUser, TransactionRecord } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api";
 const TOKEN_KEY = "explosive_token";
@@ -57,10 +57,12 @@ export const api = {
   updateProduct: (id: string, payload: { name: string; unit: string; description: string }) => request<Product>(`/products/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteProduct: (id: string) => request<Product>(`/products/${id}`, { method: "DELETE" }),
   suppliers: () => request<Party[]>("/suppliers"),
+  supplierTransactions: (id: string, page = 1, pageSize = 10) => request<PaginatedTransactions>(`/suppliers/${id}/transactions?page=${page}&pageSize=${pageSize}`),
   createSupplier: (payload: { name: string; phone?: string; address?: string }) => request<Party>("/suppliers", { method: "POST", body: JSON.stringify(payload) }),
   updateSupplier: (id: string, payload: { name: string; phone?: string; address?: string }) => request<Party>(`/suppliers/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteSupplier: (id: string) => request<Party>(`/suppliers/${id}`, { method: "DELETE" }),
   customers: () => request<Party[]>("/customers"),
+  customerTransactions: (id: string, page = 1, pageSize = 10) => request<PaginatedTransactions>(`/customers/${id}/transactions?page=${page}&pageSize=${pageSize}`),
   createCustomer: (payload: { name: string; phone?: string; address?: string }) => request<Party>("/customers", { method: "POST", body: JSON.stringify(payload) }),
   updateCustomer: (id: string, payload: { name: string; phone?: string; address?: string }) => request<Party>(`/customers/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteCustomer: (id: string) => request<Party>(`/customers/${id}`, { method: "DELETE" }),

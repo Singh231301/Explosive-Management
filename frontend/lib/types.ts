@@ -1,4 +1,4 @@
-﻿export type SessionUser = {
+export type SessionUser = {
   id: string;
   name: string;
   email: string;
@@ -46,12 +46,23 @@ export type TransactionRecord = {
   type: string;
   referenceNo: string;
   createdAt: string;
+  updatedAt: string;
   supplierId?: string | null;
   customerId?: string | null;
+  supplierName?: string | null;
+  customerName?: string | null;
   notes?: string | null;
   warehouseId?: string;
   totalQuantity?: number;
   items: TransactionItem[];
+};
+
+export type PaginatedTransactions = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  items: TransactionRecord[];
 };
 
 export type DashboardData = {
