@@ -9,14 +9,14 @@ export function LanguageToggle() {
   return (
     <div className="glass-card inline-flex rounded-full border border-white/60 p-1 shadow-soft">
       <button
-        className={`rounded-full px-3 py-2 text-sm font-semibold ${language === "en" ? "bg-brand-600 text-white" : "text-ink"}`}
+        className={`rounded-full px-3 py-2 text-xs font-semibold transition ${language === "en" ? "bg-brand-600 text-white shadow-sm" : "text-ink hover:bg-white/70"}`}
         onClick={() => setLanguage("en")}
         type="button"
       >
         {t("english", language)}
       </button>
       <button
-        className={`rounded-full px-3 py-2 text-sm font-semibold ${language === "hi" ? "bg-brand-600 text-white" : "text-ink"}`}
+        className={`rounded-full px-3 py-2 text-xs font-semibold transition ${language === "hi" ? "bg-brand-600 text-white shadow-sm" : "text-ink hover:bg-white/70"}`}
         onClick={() => setLanguage("hi")}
         type="button"
       >

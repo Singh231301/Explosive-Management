@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,11 @@ export function TransactionEntryForm({ transactionType, warehouseId, products, p
   const [pricePerUnit, setPricePerUnit] = useState("0");
   const [partyId, setPartyId] = useState(parties[0]?.value ?? "");
   const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    setSaving(true);
     try {
       await api.createTransaction({
         type: transactionType,
@@ -37,6 +39,8 @@ export function TransactionEntryForm({ transactionType, warehouseId, products, p
       onSaved?.();
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Unable to save transaction", "error");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -48,7 +52,7 @@ export function TransactionEntryForm({ transactionType, warehouseId, products, p
         <Input type="number" step="0.01" placeholder="Price per unit" value={pricePerUnit} onChange={(e) => setPricePerUnit(e.target.value)} />
         <Dropdown options={parties} value={partyId} onChange={setPartyId} searchPlaceholder={t("selectName", language)} />
         <Input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-        <Button type="submit">Save Entry</Button>
+        <Button type="submit" loading={saving} loadingText="Saving...">Save Entry</Button>
       </Form>
     </Card>
   );

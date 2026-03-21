@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,12 @@ export function MasterDataForm({ resource, title, placeholders, onSaved }: { res
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    setSaving(true);
     try {
       const payload = { name, phone, address };
       const saved = resource === "suppliers" ? await api.createSupplier(payload) : await api.createCustomer(payload);
@@ -27,6 +29,8 @@ export function MasterDataForm({ resource, title, placeholders, onSaved }: { res
       onSaved(saved);
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not save", "error");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -37,7 +41,7 @@ export function MasterDataForm({ resource, title, placeholders, onSaved }: { res
         <Input placeholder={placeholders.name} value={name} onChange={(e) => setName(e.target.value)} />
         {placeholders.phone ? <Input placeholder={placeholders.phone} value={phone} onChange={(e) => setPhone(e.target.value)} /> : null}
         {placeholders.address ? <Input placeholder={placeholders.address} value={address} onChange={(e) => setAddress(e.target.value)} /> : null}
-        <Button type="submit">Save</Button>
+        <Button type="submit" loading={saving} loadingText="Saving...">Save</Button>
       </Form>
     </Card>
   );

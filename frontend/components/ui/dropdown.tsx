@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
@@ -32,14 +32,14 @@ export function Dropdown({ label, options, value, onChange, searchPlaceholder }:
       {label ? <span className="block text-sm font-medium text-slate-600">{label}</span> : null}
       <button
         type="button"
-        className="flex min-h-12 w-full items-center justify-between rounded-2xl border border-brand-100 bg-white px-4 py-3 text-left text-base text-ink"
+        className="flex h-11 w-full items-center justify-between rounded-xl border border-brand-100 bg-white px-4 text-left text-sm text-ink shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200"
         onClick={() => setOpen((current) => !current)}
       >
         <span className={selected ? "text-ink" : "text-slate-400"}>{selected?.label || searchPlaceholder || "Select"}</span>
         <ChevronDown className={`transition ${open ? "rotate-180" : ""}`} size={18} />
       </button>
       {open ? (
-        <div className="rounded-3xl border border-brand-100 bg-white p-3 shadow-soft">
+        <div className="rounded-2xl border border-brand-100 bg-white p-3 shadow-soft">
           <div className="relative mb-3">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <Input className="pl-10" placeholder={searchPlaceholder} value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -49,7 +49,7 @@ export function Dropdown({ label, options, value, onChange, searchPlaceholder }:
               <button
                 key={option.value}
                 type="button"
-                className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-medium ${option.value === value ? "bg-brand-600 text-white" : "bg-slate-50 text-ink"}`}
+                className={`w-full rounded-xl px-4 py-2.5 text-left text-sm font-medium transition ${option.value === value ? "bg-brand-600 text-white shadow-sm" : "bg-slate-50 text-ink hover:bg-slate-100"}`}
                 onClick={() => {
                   onChange(option.value);
                   setQuery("");

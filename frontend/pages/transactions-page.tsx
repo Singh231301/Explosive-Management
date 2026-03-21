@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/layout/language-provider";
@@ -6,6 +6,7 @@ import { useToast } from "@/components/layout/toast-provider";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { useRequireAuth } from "@/lib/auth";
@@ -19,6 +20,9 @@ export default function TransactionsPage() {
   const { showToast } = useToast();
   const [rows, setRows] = useState<TransactionRecord[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState("");
   const [pricePerUnit, setPricePerUnit] = useState("");
   const [notes, setNotes] = useState("");
@@ -41,6 +45,7 @@ export default function TransactionsPage() {
       const firstItem = row.items[0];
       if (!firstItem?.productId) return;
 
+      setSavingId(row.id);
       const updated = await api.updateTransaction(row.id, {
         type: row.type,
         warehouseId: row.warehouseId || "default-warehouse",
@@ -55,17 +60,23 @@ export default function TransactionsPage() {
       showToast("Transaction updated successfully", "success");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not update transaction", "error");
+    } finally {
+      setSavingId(null);
     }
   }
 
-  async function removeTransaction(id: string) {
-    if (!window.confirm("Delete this transaction? Stock will be recalculated.")) return;
+  async function removeTransaction() {
+    if (!deleteId) return;
     try {
-      await api.deleteTransaction(id);
-      setRows((current) => current.filter((row) => row.id !== id));
+      setDeletingId(deleteId);
+      await api.deleteTransaction(deleteId);
+      setRows((current) => current.filter((row) => row.id !== deleteId));
+      setDeleteId(null);
       showToast("Transaction deleted successfully", "success");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not delete transaction", "error");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -92,20 +103,32 @@ export default function TransactionsPage() {
                   <Input type="number" step="0.01" value={pricePerUnit} onChange={(e) => setPricePerUnit(e.target.value)} placeholder={t("pricePerUnit", language)} />
                   <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t("notes", language)} />
                   <div className="flex gap-2">
-                    <Button type="button" className="w-auto bg-brand-600 px-3 py-2" onClick={() => saveEdit(row)}>{t("saveChanges", language)}</Button>
-                    <Button type="button" className="w-auto bg-slate-700 px-3 py-2" onClick={() => setEditingId(null)}>{t("cancel", language)}</Button>
+                    <Button type="button" className="w-auto min-w-0 bg-brand-600" loading={savingId === row.id} loadingText="Saving..." onClick={() => saveEdit(row)}>{t("saveChanges", language)}</Button>
+                    <Button type="button" className="w-auto min-w-0 bg-slate-700 hover:bg-slate-800" onClick={() => setEditingId(null)} disabled={savingId === row.id}>{t("cancel", language)}</Button>
                   </div>
                 </div>
               ) : (
                 <div className="mt-3 flex gap-2">
-                  <Button type="button" className="w-auto bg-slate-900 px-3 py-2" onClick={() => openEdit(row)}>{t("edit", language)}</Button>
-                  <Button type="button" className="w-auto bg-danger px-3 py-2" onClick={() => removeTransaction(row.id)}>{t("delete", language)}</Button>
+                  <Button type="button" className="w-auto min-w-0 bg-slate-900 hover:bg-slate-800" onClick={() => openEdit(row)}>{t("edit", language)}</Button>
+                  <Button type="button" className="w-auto min-w-0 bg-danger hover:bg-rose-700" onClick={() => setDeleteId(row.id)}>{t("delete", language)}</Button>
                 </div>
               )}
             </Card>
           );
         })}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteId)}
+        title="Delete transaction?"
+        description="This will remove the transaction and recalculate stock balances."
+        confirmLabel="Delete"
+        cancelLabel={t("cancel", language)}
+        tone="danger"
+        loading={deletingId === deleteId}
+        onConfirm={removeTransaction}
+        onClose={() => setDeleteId(null)}
+      />
     </div>
   );
 }
