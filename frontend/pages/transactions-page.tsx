@@ -110,9 +110,10 @@ export default function TransactionsPage() {
             <Card key={row.id} className="bg-white/95">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-bold">{row.items[0]?.product.name || row.referenceNo}</p>
+                  <p className="font-bold">{row.items[0]?.product.name ? `${row.items[0].product.name}${row.warehouseName ? ` (${row.warehouseName})` : ""}` : row.referenceNo}</p>
                   <p className="text-sm text-slate-500">Qty {formatNumber(row.totalQuantity || 0)} | {formatDate(row.createdAt)}</p>
                   <p className="text-xs text-slate-400">{row.referenceNo}</p>
+                  <p className="text-xs text-slate-400">Warehouse: {row.warehouseName || "-"}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2 text-right">
                   <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${partyTag.className}`}>{partyTag.label}</span>

@@ -19,6 +19,12 @@ export type Party = {
   address?: string | null;
 };
 
+export type Warehouse = {
+  id: string;
+  name: string;
+  location?: string | null;
+};
+
 export type InventoryRow = {
   id: string;
   productId: string;
@@ -53,6 +59,7 @@ export type TransactionRecord = {
   customerName?: string | null;
   notes?: string | null;
   warehouseId?: string;
+  warehouseName?: string | null;
   totalQuantity?: number;
   totalAmount?: number;
   items: TransactionItem[];
@@ -85,6 +92,8 @@ export type BillingReport = {
     label: string;
     partyType: string;
     partyName: string;
+    warehouseId?: string;
+    warehouseName?: string;
   };
   summary: {
     totalTransactions: number;

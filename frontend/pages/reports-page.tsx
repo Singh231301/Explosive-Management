@@ -11,12 +11,12 @@ import { Input } from "@/components/ui/input";
 import { api, getToken } from "@/lib/api";
 import { useRequireAuth } from "@/lib/auth";
 import { t } from "@/lib/i18n";
-import type { BillingReport, Party, TransactionRecord } from "@/lib/types";
+import type { BillingReport, Party, TransactionRecord, Warehouse } from "@/lib/types";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api";
 const initialBilling: BillingReport = {
-  filters: { range: "this_month", startDate: "", endDate: "", label: "This Month", partyType: "all", partyName: "All Parties" },
+  filters: { range: "this_month", startDate: "", endDate: "", label: "This Month", partyType: "all", partyName: "All Parties", warehouseId: "", warehouseName: "All Warehouses" },
   summary: { totalTransactions: 0, totalQuantity: 0, totalDebit: 0, totalCredit: 0, netAmount: 0 },
   transactions: []
 };
@@ -48,30 +48,39 @@ function getPartyLabel(transaction: TransactionRecord) {
   return transaction.referenceNo;
 }
 
-function buildPdfQuery(filters: { range: string; startDate: string; endDate: string; partyType: string; partyId: string }) {
+function resolvePartyParams(filters: { supplierId: string; customerId: string }) {
+  if (filters.supplierId) return { partyType: "supplier", partyId: filters.supplierId };
+  if (filters.customerId) return { partyType: "customer", partyId: filters.customerId };
+  return { partyType: "all", partyId: "" };
+}
+
+function buildPdfQuery(filters: { range: string; startDate: string; endDate: string; warehouseId: string; supplierId: string; customerId: string }) {
+  const party = resolvePartyParams(filters);
   const search = new URLSearchParams();
   if (filters.range) search.set("range", filters.range);
   if (filters.startDate) search.set("startDate", filters.startDate);
   if (filters.endDate) search.set("endDate", filters.endDate);
-  if (filters.partyType) search.set("partyType", filters.partyType);
-  if (filters.partyId) search.set("partyId", filters.partyId);
+  if (filters.warehouseId) search.set("warehouseId", filters.warehouseId);
+  if (party.partyType !== "all") search.set("partyType", party.partyType);
+  if (party.partyId) search.set("partyId", party.partyId);
   return `/reports/pdf?${search.toString()}`;
 }
 
-function buildPdfDownloadPath(filters: { range: string; startDate: string; endDate: string; partyType: string; partyId: string }) {
+function buildPdfDownloadPath(filters: { range: string; startDate: string; endDate: string; warehouseId: string; supplierId: string; customerId: string }) {
+  const party = resolvePartyParams(filters);
   const search = new URLSearchParams();
   if (filters.range) search.set("range", filters.range);
   if (filters.startDate) search.set("startDate", filters.startDate);
   if (filters.endDate) search.set("endDate", filters.endDate);
-  if (filters.partyType) search.set("partyType", filters.partyType);
-  if (filters.partyId) search.set("partyId", filters.partyId);
+  if (filters.warehouseId) search.set("warehouseId", filters.warehouseId);
+  if (party.partyType !== "all") search.set("partyType", party.partyType);
+  if (party.partyId) search.set("partyId", party.partyId);
   search.set("download", "1");
   return `/reports/billing/pdf?${search.toString()}`;
 }
 
-function shouldAutoGenerate(filters: { range: string; startDate: string; endDate: string; partyType: string; partyId: string }) {
+function shouldAutoGenerate(filters: { range: string; startDate: string; endDate: string }) {
   if (filters.range === "custom" && (!filters.startDate || !filters.endDate)) return false;
-  if (filters.partyType !== "all" && !filters.partyId) return false;
   return true;
 }
 
@@ -81,16 +90,18 @@ export default function ReportsPage() {
   const [billing, setBilling] = useState<BillingReport>(initialBilling);
   const [suppliers, setSuppliers] = useState<Party[]>([]);
   const [customers, setCustomers] = useState<Party[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [message, setMessage] = useState("");
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   const [billingLoading, setBillingLoading] = useState(false);
-  const [filters, setFilters] = useState({ range: "this_month", startDate: "", endDate: "", partyType: "all", partyId: "" });
+  const [filters, setFilters] = useState({ range: "this_month", startDate: "", endDate: "", warehouseId: "", supplierId: "", customerId: "" });
 
   useEffect(() => {
-    Promise.all([api.suppliers(), api.customers()])
-      .then(([supplierRows, customerRows]) => {
+    Promise.all([api.suppliers(), api.customers(), api.warehouses()])
+      .then(([supplierRows, customerRows, warehouseRows]) => {
         setSuppliers(supplierRows);
         setCustomers(customerRows);
+        setWarehouses(warehouseRows);
       })
       .catch(() => undefined);
   }, []);
@@ -116,7 +127,15 @@ export default function ReportsPage() {
     try {
       setBillingLoading(true);
       setMessage("");
-      const report = await api.billingReport(nextFilters);
+      const party = resolvePartyParams(nextFilters);
+      const report = await api.billingReport({
+        range: nextFilters.range,
+        startDate: nextFilters.startDate,
+        endDate: nextFilters.endDate,
+        warehouseId: nextFilters.warehouseId,
+        partyType: party.partyType,
+        partyId: party.partyId
+      });
       setBilling(report);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not load billing report");
@@ -125,11 +144,9 @@ export default function ReportsPage() {
     }
   }
 
-  const partyOptions = useMemo(() => {
-    if (filters.partyType === "supplier") return suppliers.map((row) => ({ label: row.name, value: row.id }));
-    if (filters.partyType === "customer") return customers.map((row) => ({ label: row.name, value: row.id }));
-    return [];
-  }, [customers, filters.partyType, suppliers]);
+  const warehouseOptions = useMemo(() => [{ label: "All Warehouses", value: "" }, ...warehouses.map((row) => ({ label: row.name, value: row.id }))], [warehouses]);
+  const supplierOptions = useMemo(() => [{ label: "All Suppliers", value: "" }, ...suppliers.map((row) => ({ label: row.name, value: row.id }))], [suppliers]);
+  const customerOptions = useMemo(() => [{ label: "All Customers", value: "" }, ...customers.map((row) => ({ label: row.name, value: row.id }))], [customers]);
 
   const pdfPreviewUrl = buildPdfQuery(filters);
   const pdfDownloadPath = buildPdfDownloadPath(filters);
@@ -158,27 +175,11 @@ export default function ReportsPage() {
             value={filters.range}
             onChange={(value) => setFilters((current) => ({ ...current, range: value }))}
           />
-          <Dropdown
-            label="Statement For"
-            options={[
-              { label: "All Transactions", value: "all" },
-              { label: "Specific Supplier", value: "supplier" },
-              { label: "Specific Customer", value: "customer" }
-            ]}
-            value={filters.partyType}
-            onChange={(value) => setFilters((current) => ({ ...current, partyType: value, partyId: "" }))}
-          />
+          <Dropdown label="Warehouse" options={warehouseOptions} value={filters.warehouseId} onChange={(value) => setFilters((current) => ({ ...current, warehouseId: value }))} searchPlaceholder="Select warehouse" />
+          <Dropdown label="Supplier" options={supplierOptions} value={filters.supplierId} onChange={(value) => setFilters((current) => ({ ...current, supplierId: value, customerId: value ? "" : current.customerId }))} searchPlaceholder="Select supplier" />
+          <Dropdown label="Customer" options={customerOptions} value={filters.customerId} onChange={(value) => setFilters((current) => ({ ...current, customerId: value, supplierId: value ? "" : current.supplierId }))} searchPlaceholder="Select customer" />
           {filters.range === "custom" ? <Input type="date" value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} /> : null}
           {filters.range === "custom" ? <Input type="date" value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} /> : null}
-          {filters.partyType !== "all" ? (
-            <Dropdown
-              label={filters.partyType === "supplier" ? "Supplier" : "Customer"}
-              options={partyOptions}
-              value={filters.partyId}
-              onChange={(value) => setFilters((current) => ({ ...current, partyId: value }))}
-              searchPlaceholder={filters.partyType === "supplier" ? "Select supplier" : "Select customer"}
-            />
-          ) : null}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -186,7 +187,7 @@ export default function ReportsPage() {
             Preview PDF
           </Link>
           <Button type="button" className="w-auto bg-brand-600" loading={loadingKey === "statement-pdf"} loadingText="Preparing..." onClick={() => runDownload("statement-pdf", pdfDownloadPath, "billing-statement.pdf")}>Download PDF</Button>
-          <Button type="button" className="w-auto bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900" onClick={() => setFilters({ range: "this_month", startDate: "", endDate: "", partyType: "all", partyId: "" })}>Reset</Button>
+          <Button type="button" className="w-auto bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900" onClick={() => setFilters({ range: "this_month", startDate: "", endDate: "", warehouseId: "", supplierId: "", customerId: "" })}>Reset</Button>
         </div>
 
         {waitingForSelection ? <p className="mt-3 text-sm text-slate-500">Select the remaining filter to update the bill.</p> : null}
@@ -203,6 +204,7 @@ export default function ReportsPage() {
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
             <span className="rounded-full bg-white px-3 py-1 text-slate-700">{billing.filters.label}</span>
             <span className="rounded-full bg-brand-50 px-3 py-1 text-brand-700">{billing.filters.partyName}</span>
+            <span className="rounded-full bg-sky-50 px-3 py-1 text-sky-700">{billing.filters.warehouseName || "All Warehouses"}</span>
             <span className="rounded-full bg-slate-900 px-3 py-1 text-white">Net {formatCurrency(billing.summary.netAmount)}</span>
           </div>
 
@@ -213,8 +215,9 @@ export default function ReportsPage() {
                 <div key={transaction.id} className="rounded-2xl border border-slate-200 bg-white p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-ink">{transaction.referenceNo}</p>
+                      <p className="font-semibold text-ink">{transaction.items[0]?.product.name ? `${transaction.items[0].product.name}${transaction.warehouseName ? ` (${transaction.warehouseName})` : ""}` : transaction.referenceNo}</p>
                       <p className="mt-1 text-sm text-slate-500">{getPartyLabel(transaction)}</p>
+                      <p className="mt-1 text-xs text-slate-400">{transaction.referenceNo}</p>
                     </div>
                     <div className="text-right">
                       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${tone.className}`}>{tone.label}</span>
@@ -224,11 +227,9 @@ export default function ReportsPage() {
                   <div className="mt-3 grid gap-2 text-sm text-slate-600">
                     {transaction.items.map((item) => {
                       const unitPrice = Number(item.pricePerUnit || 0);
-                      const itemAmount = Number(item.quantity || 0) * unitPrice;
                       return (
                         <div key={item.id} className="rounded-2xl bg-slate-50 px-3 py-2">
-                          <div className="flex items-start justify-between gap-3">
-                            <span className="font-medium text-ink">{item.product.name}</span>
+                          <div className="flex items-start justify-end gap-3">
                             <div className="text-right">
                               <p className="text-xs text-slate-500">Qty {formatNumber(item.quantity)} x {formatNumber(unitPrice)}</p>
                             </div>
@@ -257,5 +258,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-
-

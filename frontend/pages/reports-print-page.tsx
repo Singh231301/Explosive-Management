@@ -10,7 +10,7 @@ import type { BillingReport, TransactionRecord } from "@/lib/types";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/utils";
 
 const initialBilling: BillingReport = {
-  filters: { range: "this_month", startDate: "", endDate: "", label: "This Month", partyType: "all", partyName: "All Parties" },
+  filters: { range: "this_month", startDate: "", endDate: "", label: "This Month", partyType: "all", partyName: "All Parties", warehouseId: "", warehouseName: "All Warehouses" },
   summary: { totalTransactions: 0, totalQuantity: 0, totalDebit: 0, totalCredit: 0, netAmount: 0 },
   transactions: []
 };
@@ -38,7 +38,8 @@ export default function PrintReportPage() {
       startDate: params?.get("startDate") || "",
       endDate: params?.get("endDate") || "",
       partyType: params?.get("partyType") || "all",
-      partyId: params?.get("partyId") || ""
+      partyId: params?.get("partyId") || "",
+      warehouseId: params?.get("warehouseId") || ""
     }).then(setBilling).catch(() => undefined);
   }, [searchParams]);
 
@@ -58,6 +59,7 @@ export default function PrintReportPage() {
           </div>
           <div className="text-right text-sm text-slate-600">
             <p><span className="font-semibold">Statement For:</span> {billing.filters.partyName}</p>
+            <p><span className="font-semibold">Warehouse:</span> {billing.filters.warehouseName || "All Warehouses"}</p>
             <p><span className="font-semibold">From:</span> {billing.filters.startDate ? formatDate(billing.filters.startDate) : "-"}</p>
             <p><span className="font-semibold">To:</span> {billing.filters.endDate ? formatDate(billing.filters.endDate) : "-"}</p>
           </div>
@@ -77,8 +79,9 @@ export default function PrintReportPage() {
               <div key={transaction.id} className="rounded-2xl border border-slate-200 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-ink">{transaction.referenceNo}</p>
+                    <p className="font-semibold text-ink">{transaction.items[0]?.product.name ? `${transaction.items[0].product.name}${transaction.warehouseName ? ` (${transaction.warehouseName})` : ""}` : transaction.referenceNo}</p>
                     <p className="mt-1 text-slate-600">{getPartyLabel(transaction)}</p>
+                    <p className="mt-1 text-xs text-slate-500">{transaction.referenceNo}</p>
                     <p className="mt-1 text-xs text-slate-500">Updated {formatDate(transaction.updatedAt)}</p>
                   </div>
                   <div className="text-right">
@@ -90,11 +93,9 @@ export default function PrintReportPage() {
                 <div className="mt-3 space-y-2">
                   {transaction.items.map((item) => {
                     const unitPrice = Number(item.pricePerUnit || 0);
-                    const itemAmount = Number(item.quantity || 0) * unitPrice;
                     return (
                       <div key={item.id} className="rounded-2xl bg-slate-50 px-3 py-2">
-                        <div className="flex items-start justify-between gap-3">
-                          <span>{item.product.name}</span>
+                        <div className="flex items-start justify-end gap-3">
                           <div className="text-right">
                             <p className="text-xs text-slate-500">Qty {formatNumber(item.quantity)} x {formatNumber(unitPrice)}</p>
                           </div>
@@ -112,5 +113,3 @@ export default function PrintReportPage() {
     </div>
   );
 }
-
-

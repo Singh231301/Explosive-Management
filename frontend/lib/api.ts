@@ -1,4 +1,4 @@
-import type { BillingReport, DashboardData, InventoryRow, PaginatedTransactions, Party, Product, ReportsData, SessionUser, TransactionRecord } from "@/lib/types";
+import type { BillingReport, DashboardData, InventoryRow, PaginatedTransactions, Party, Product, ReportsData, SessionUser, TransactionRecord, Warehouse } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api";
 const TOKEN_KEY = "explosive_token";
@@ -76,6 +76,8 @@ export const api = {
   createCustomer: (payload: { name: string; phone?: string; address?: string }) => request<Party>("/customers", { method: "POST", body: JSON.stringify(payload) }),
   updateCustomer: (id: string, payload: { name: string; phone?: string; address?: string }) => request<Party>(`/customers/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteCustomer: (id: string) => request<Party>(`/customers/${id}`, { method: "DELETE" }),
+  warehouses: () => request<Warehouse[]>("/warehouses"),
+  createWarehouse: (payload: { name: string; location?: string }) => request<Warehouse>("/warehouses", { method: "POST", body: JSON.stringify(payload) }),
   transactions: () => request<TransactionRecord[]>("/transactions"),
   createTransaction: (payload: unknown) => request<TransactionRecord>("/transactions", { method: "POST", body: JSON.stringify(payload) }),
   updateTransaction: (id: string, payload: unknown) => request<TransactionRecord>(`/transactions/${id}`, { method: "PUT", body: JSON.stringify(payload) }),

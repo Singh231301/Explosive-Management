@@ -61,7 +61,7 @@ export async function getInventorySummary() {
 export async function getDashboardMetrics() {
   const recentTransactions = await prisma.transaction.findMany({
     where: { deletedAt: null },
-    include: { items: { include: { product: true } }, supplier: true, customer: true },
+    include: { items: { include: { product: true } }, supplier: true, customer: true, warehouse: true },
     orderBy: { createdAt: "desc" },
     take: 5
   });
@@ -77,6 +77,8 @@ export async function getDashboardMetrics() {
       customerId: row.customerId,
       supplierName: row.supplier?.name ?? null,
       customerName: row.customer?.name ?? null,
+      warehouseId: row.warehouseId,
+      warehouseName: row.warehouse?.name ?? null,
       totalQuantity: row.items.reduce((sum, item) => sum + Number(item.quantity), 0),
       items: row.items.map((item) => ({ id: item.id, quantity: Number(item.quantity), product: { name: item.product.name } }))
     }))

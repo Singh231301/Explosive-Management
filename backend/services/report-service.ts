@@ -9,6 +9,7 @@ type BillingQuery = {
   endDate?: string;
   partyType?: string;
   partyId?: string;
+  warehouseId?: string;
 };
 
 type ResolvedBillingReport = Awaited<ReturnType<typeof buildBillingReport>>;
@@ -73,6 +74,12 @@ async function resolvePartyLabel(partyType?: string, partyId?: string) {
   return "All Parties";
 }
 
+async function resolveWarehouseLabel(warehouseId?: string) {
+  if (!warehouseId) return "All Warehouses";
+  const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
+  return warehouse?.name || "Selected Warehouse";
+}
+
 function formatDateLabel(value?: string) {
   if (!value) return "-";
   const date = new Date(value);
@@ -99,7 +106,7 @@ function buildLineItems(report: ResolvedBillingReport): BillingLineItem[] {
       serial += 1;
       return {
         serial,
-        name: item.product.name,
+        name: transaction.warehouseName ? `${item.product.name} (${transaction.warehouseName})` : item.product.name,
         quantity: Number(item.quantity || 0),
         price: Number(item.pricePerUnit || 0),
         amount: Number(item.quantity || 0) * Number(item.pricePerUnit || 0)
@@ -137,12 +144,13 @@ async function buildBillingReport(query: BillingQuery) {
     deletedAt: null,
     createdAt: { gte: range.start, lte: range.end },
     ...(query.partyType === "supplier" && query.partyId ? { supplierId: query.partyId } : {}),
-    ...(query.partyType === "customer" && query.partyId ? { customerId: query.partyId } : {})
+    ...(query.partyType === "customer" && query.partyId ? { customerId: query.partyId } : {}),
+    ...(query.warehouseId ? { warehouseId: query.warehouseId } : {})
   };
 
   const transactions = await prisma.transaction.findMany({
     where,
-    include: { items: { include: { product: true } }, supplier: true, customer: true, financialLedger: true },
+    include: { items: { include: { product: true } }, supplier: true, customer: true, financialLedger: true, warehouse: true },
     orderBy: { createdAt: "desc" }
   });
 
@@ -158,13 +166,12 @@ async function buildBillingReport(query: BillingQuery) {
   });
 
   const totalQuantity = mappedTransactions.reduce((sum, row) => sum + Number(row.totalQuantity || 0), 0);
-  const totalDebit = mappedTransactions
-    .filter((row) => row.type === "PURCHASE")
-    .reduce((sum, row) => sum + Number(row.totalAmount || 0), 0);
-  const totalCredit = mappedTransactions
-    .filter((row) => row.type === "USAGE")
-    .reduce((sum, row) => sum + Number(row.totalAmount || 0), 0);
-  const partyName = await resolvePartyLabel(query.partyType, query.partyId);
+  const totalDebit = mappedTransactions.filter((row) => row.type === "PURCHASE").reduce((sum, row) => sum + Number(row.totalAmount || 0), 0);
+  const totalCredit = mappedTransactions.filter((row) => row.type === "USAGE").reduce((sum, row) => sum + Number(row.totalAmount || 0), 0);
+  const [partyName, warehouseName] = await Promise.all([
+    resolvePartyLabel(query.partyType, query.partyId),
+    resolveWarehouseLabel(query.warehouseId)
+  ]);
 
   return {
     filters: {
@@ -173,7 +180,9 @@ async function buildBillingReport(query: BillingQuery) {
       endDate: range.end.toISOString(),
       label: range.label,
       partyType: query.partyType || "all",
-      partyName
+      partyName,
+      warehouseId: query.warehouseId || "",
+      warehouseName
     },
     summary: {
       totalTransactions: mappedTransactions.length,
@@ -193,18 +202,19 @@ function drawHeader(page: import("pdf-lib").PDFPage, boldFont: import("pdf-lib")
 
   page.drawText("BILL STATEMENT", { x: 180, y: height - 82, size: 24, font: boldFont, color: rgb(0.07, 0.1, 0.18) });
   page.drawText(`Party: ${report.filters.partyName}`, { x: 50, y: height - 116, size: 12, font: boldFont, color: rgb(0.07, 0.1, 0.18) });
-  page.drawText(`Range: ${report.filters.label}`, { x: 50, y: height - 134, size: 11, font, color: rgb(0.28, 0.33, 0.4) });
-  page.drawText(`From: ${formatDateLabel(report.filters.startDate)}`, { x: 50, y: height - 152, size: 11, font, color: rgb(0.28, 0.33, 0.4) });
-  page.drawText(`To: ${formatDateLabel(report.filters.endDate)}`, { x: 220, y: height - 152, size: 11, font, color: rgb(0.28, 0.33, 0.4) });
+  page.drawText(`Warehouse: ${report.filters.warehouseName}`, { x: 50, y: height - 134, size: 11, font, color: rgb(0.28, 0.33, 0.4) });
+  page.drawText(`Range: ${report.filters.label}`, { x: 50, y: height - 152, size: 11, font, color: rgb(0.28, 0.33, 0.4) });
+  page.drawText(`From: ${formatDateLabel(report.filters.startDate)}`, { x: 50, y: height - 170, size: 11, font, color: rgb(0.28, 0.33, 0.4) });
+  page.drawText(`To: ${formatDateLabel(report.filters.endDate)}`, { x: 220, y: height - 170, size: 11, font, color: rgb(0.28, 0.33, 0.4) });
   page.drawText(`Generated: ${formatDateLabel(new Date().toISOString())}`, { x: width - 170, y: height - 116, size: 11, font, color: rgb(0.28, 0.33, 0.4) });
 
-  page.drawLine({ start: { x: 40, y: height - 170 }, end: { x: width - 40, y: height - 170 }, thickness: 1, color: rgb(0.75, 0.78, 0.82) });
-  page.drawText("SN", { x: 44, y: height - 190, size: 11, font: boldFont });
-  page.drawText("Item", { x: 84, y: height - 190, size: 11, font: boldFont });
-  page.drawText("Qty", { x: 330, y: height - 190, size: 11, font: boldFont });
-  page.drawText("Price", { x: 390, y: height - 190, size: 11, font: boldFont });
-  page.drawText("Amt", { x: width - 88, y: height - 190, size: 11, font: boldFont });
-  page.drawLine({ start: { x: 40, y: height - 198 }, end: { x: width - 40, y: height - 198 }, thickness: 1, color: rgb(0.75, 0.78, 0.82) });
+  page.drawLine({ start: { x: 40, y: height - 188 }, end: { x: width - 40, y: height - 188 }, thickness: 1, color: rgb(0.75, 0.78, 0.82) });
+  page.drawText("SN", { x: 44, y: height - 208, size: 11, font: boldFont });
+  page.drawText("Item", { x: 84, y: height - 208, size: 11, font: boldFont });
+  page.drawText("Qty", { x: 330, y: height - 208, size: 11, font: boldFont });
+  page.drawText("Price", { x: 390, y: height - 208, size: 11, font: boldFont });
+  page.drawText("Amt", { x: width - 88, y: height - 208, size: 11, font: boldFont });
+  page.drawLine({ start: { x: 40, y: height - 216 }, end: { x: width - 40, y: height - 216 }, thickness: 1, color: rgb(0.75, 0.78, 0.82) });
 }
 
 export async function getReports() {
@@ -241,7 +251,7 @@ export async function getBillingReportPdf(query: BillingQuery) {
   drawHeader(page, boldFont, font, report, pageNumber);
 
   const { width, height } = page.getSize();
-  let y = height - 230;
+  let y = height - 248;
   const rowHeight = 20;
 
   for (const item of lineItems) {
@@ -252,7 +262,7 @@ export async function getBillingReportPdf(query: BillingQuery) {
       page = pdf.addPage(pageSize);
       pageNumber += 1;
       drawHeader(page, boldFont, font, report, pageNumber);
-      y = height - 230;
+      y = height - 248;
     }
 
     page.drawText(String(item.serial), { x: 44, y, size: 11, font, color: rgb(0.07, 0.1, 0.18) });
@@ -271,7 +281,7 @@ export async function getBillingReportPdf(query: BillingQuery) {
     page = pdf.addPage(pageSize);
     pageNumber += 1;
     drawHeader(page, boldFont, font, report, pageNumber);
-    y = height - 230;
+    y = height - 248;
   }
 
   const summaryTop = y - 10;

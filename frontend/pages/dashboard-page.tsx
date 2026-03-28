@@ -149,7 +149,7 @@ export default function DashboardPage() {
               <div key={transaction.id} className="rounded-2xl border border-slate-100 p-3">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-semibold">{transaction.items[0]?.product.name || transaction.type}</p>
+                    <p className="font-semibold">{transaction.items[0]?.product.name ? `${transaction.items[0].product.name}${transaction.warehouseName ? ` (${transaction.warehouseName})` : ""}` : transaction.type}</p>
                     <p className="text-sm text-slate-500">Qty: {formatNumber(transaction.totalQuantity || 0)}</p>
                     <p className="mt-1 text-sm text-slate-500">{formatDate(transaction.createdAt)}</p>
                   </div>
@@ -166,3 +166,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

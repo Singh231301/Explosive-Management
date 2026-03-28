@@ -13,7 +13,8 @@ export async function billingReportController(req: Request, res: Response) {
       startDate: typeof req.query.startDate === "string" ? req.query.startDate : undefined,
       endDate: typeof req.query.endDate === "string" ? req.query.endDate : undefined,
       partyType: typeof req.query.partyType === "string" ? req.query.partyType : undefined,
-      partyId: typeof req.query.partyId === "string" ? req.query.partyId : undefined
+      partyId: typeof req.query.partyId === "string" ? req.query.partyId : undefined,
+      warehouseId: typeof req.query.warehouseId === "string" ? req.query.warehouseId : undefined
     })
   });
 }
@@ -24,7 +25,8 @@ export async function billingReportPdfController(req: Request, res: Response) {
     startDate: typeof req.query.startDate === "string" ? req.query.startDate : undefined,
     endDate: typeof req.query.endDate === "string" ? req.query.endDate : undefined,
     partyType: typeof req.query.partyType === "string" ? req.query.partyType : undefined,
-    partyId: typeof req.query.partyId === "string" ? req.query.partyId : undefined
+    partyId: typeof req.query.partyId === "string" ? req.query.partyId : undefined,
+    warehouseId: typeof req.query.warehouseId === "string" ? req.query.warehouseId : undefined
   };
   const pdfBytes = await getBillingReportPdf(query);
   const disposition = req.query.download === "1" ? "attachment" : "inline";

@@ -13,7 +13,7 @@ function makeReferenceNo(type: TransactionType) {
   return `${prefix}-${stamp}`;
 }
 
-export function mapTransactionRecord(row: Prisma.TransactionGetPayload<{ include: { items: { include: { product: true } }; supplier: true; customer: true } }>) {
+export function mapTransactionRecord(row: Prisma.TransactionGetPayload<{ include: { items: { include: { product: true } }; supplier: true; customer: true; warehouse: true } }>) {
   return {
     id: row.id,
     type: row.type,
@@ -26,6 +26,7 @@ export function mapTransactionRecord(row: Prisma.TransactionGetPayload<{ include
     customerName: row.customer?.name ?? null,
     notes: row.notes,
     warehouseId: row.warehouseId,
+    warehouseName: row.warehouse?.name ?? null,
     totalQuantity: row.items.reduce((sum, item) => sum + Number(item.quantity), 0),
     items: row.items.map((item) => ({
       id: item.id,
@@ -118,7 +119,7 @@ async function applyTransaction(tx: Prisma.TransactionClient, transactionId: str
     }
   });
 
-  return tx.transaction.findUnique({ where: { id: transactionId }, include: { items: { include: { product: true } }, supplier: true, customer: true } });
+  return tx.transaction.findUnique({ where: { id: transactionId }, include: { items: { include: { product: true } }, supplier: true, customer: true, warehouse: true } });
 }
 
 export async function createInventoryTransaction(input: unknown, createdBy: string) {
@@ -153,6 +154,6 @@ export async function deleteInventoryTransaction(id: string) {
 }
 
 export async function listTransactions() {
-  const rows = await prisma.transaction.findMany({ where: { deletedAt: null }, include: { items: { include: { product: true } }, supplier: true, customer: true }, orderBy: { createdAt: "desc" }, take: 50 });
+  const rows = await prisma.transaction.findMany({ where: { deletedAt: null }, include: { items: { include: { product: true } }, supplier: true, customer: true, warehouse: true }, orderBy: { createdAt: "desc" }, take: 50 });
   return rows.map(mapTransactionRecord);
 }
