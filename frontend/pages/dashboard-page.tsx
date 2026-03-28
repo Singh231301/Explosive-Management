@@ -15,7 +15,7 @@ import type { DashboardData, InventoryRow, TransactionRecord } from "@/lib/types
 import { formatDate, formatNumber } from "@/lib/utils";
 
 const initialData: DashboardData = { recentTransactions: [] };
-const actionCardClass = "flex h-20 flex-col justify-center rounded-2xl border border-transparent px-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md";
+const actionButtonClass = "flex h-14 items-center justify-center rounded-2xl border border-transparent px-3 text-center text-sm font-semibold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md";
 
 function getTransactionTone(transactionType: TransactionRecord["type"]) {
   if (transactionType === "PURCHASE") return { label: "+ Buy", className: "bg-emerald-50 text-emerald-700" };
@@ -59,24 +59,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <PageHeader title={t("dashboardTitle", language)} subtitle={t("dashboardSubtitle", language)} />
-        <LanguageToggle />
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 [&>div]:mb-0">
+          <PageHeader title={t("dashboardTitle", language)} subtitle={t("dashboardSubtitle", language)} />
+        </div>
+        <div className="shrink-0 pt-0.5">
+          <LanguageToggle />
+        </div>
       </div>
-
-      <Card className="bg-white/95">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold">{t("quickActions", language)}</h2>
-          <span className="text-xs font-semibold text-slate-400">Easy Tap</span>
-        </div>
-        <div className="grid grid-cols-2 gap-3 text-sm font-semibold">
-          <Link href="/purchase" className={`${actionCardClass} bg-brand-50 text-brand-700`}><span>{t("addPurchase", language)}</span></Link>
-          <Link href="/usage" className={`${actionCardClass} bg-orange-50 text-orange-700`}><span>{t("addUsage", language)}</span></Link>
-          <Link href="/transactions" className={`${actionCardClass} bg-slate-100 text-slate-800`}><span>{t("manageTransactions", language)}</span></Link>
-          <Link href="/settings" className={`${actionCardClass} bg-sky-50 text-sky-700`}><span>{t("myProfile", language)}</span></Link>
-        </div>
-      </Card>
 
       <Card className="bg-white/95">
         <div className="flex items-start justify-between gap-4">
@@ -86,8 +77,21 @@ export default function DashboardPage() {
           </div>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{inventory.length} items</span>
         </div>
-        <div className="mt-4">
+        <div className="mt-3">
           <ProductStatusAccordion rows={inventory} language={language} onSaveLimit={saveLimit} />
+        </div>
+      </Card>
+
+      <Card className="bg-white/95">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-lg font-bold">{t("quickActions", language)}</h2>
+          <span className="text-xs font-semibold text-slate-400">Easy Tap</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <Link href="/purchase" className={`${actionButtonClass} bg-brand-50 text-brand-700`}>{t("addPurchase", language)}</Link>
+          <Link href="/usage" className={`${actionButtonClass} bg-orange-50 text-orange-700`}>{t("addUsage", language)}</Link>
+          <Link href="/transactions" className={`${actionButtonClass} bg-slate-100 text-slate-800`}>{t("manageTransactions", language)}</Link>
+          <Link href="/settings" className={`${actionButtonClass} bg-sky-50 text-sky-700`}>{t("myProfile", language)}</Link>
         </div>
       </Card>
 

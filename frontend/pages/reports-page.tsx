@@ -11,11 +11,10 @@ import { Input } from "@/components/ui/input";
 import { api, getToken } from "@/lib/api";
 import { useRequireAuth } from "@/lib/auth";
 import { t } from "@/lib/i18n";
-import type { BillingReport, Party, ReportsData, TransactionRecord } from "@/lib/types";
+import type { BillingReport, Party, TransactionRecord } from "@/lib/types";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api";
-const initialData: ReportsData = { dailyCount: 0, monthlyCount: 0, financialLedger: [], inventory: [] };
 const initialBilling: BillingReport = {
   filters: { range: "this_month", startDate: "", endDate: "", label: "This Month", partyType: "all", partyName: "All Parties" },
   summary: { totalTransactions: 0, totalQuantity: 0, totalDebit: 0, totalCredit: 0, netAmount: 0 },
@@ -49,16 +48,6 @@ function getPartyLabel(transaction: TransactionRecord) {
   return transaction.referenceNo;
 }
 
-function buildPrintQuery(filters: { range: string; startDate: string; endDate: string; partyType: string; partyId: string }) {
-  const search = new URLSearchParams();
-  if (filters.range) search.set("range", filters.range);
-  if (filters.startDate) search.set("startDate", filters.startDate);
-  if (filters.endDate) search.set("endDate", filters.endDate);
-  if (filters.partyType) search.set("partyType", filters.partyType);
-  if (filters.partyId) search.set("partyId", filters.partyId);
-  return `/reports/print?${search.toString()}`;
-}
-
 function buildPdfQuery(filters: { range: string; startDate: string; endDate: string; partyType: string; partyId: string }) {
   const search = new URLSearchParams();
   if (filters.range) search.set("range", filters.range);
@@ -80,10 +69,15 @@ function buildPdfDownloadPath(filters: { range: string; startDate: string; endDa
   return `/reports/billing/pdf?${search.toString()}`;
 }
 
+function shouldAutoGenerate(filters: { range: string; startDate: string; endDate: string; partyType: string; partyId: string }) {
+  if (filters.range === "custom" && (!filters.startDate || !filters.endDate)) return false;
+  if (filters.partyType !== "all" && !filters.partyId) return false;
+  return true;
+}
+
 export default function ReportsPage() {
   useRequireAuth();
   const { language } = useLanguage();
-  const [data, setData] = useState<ReportsData>(initialData);
   const [billing, setBilling] = useState<BillingReport>(initialBilling);
   const [suppliers, setSuppliers] = useState<Party[]>([]);
   const [customers, setCustomers] = useState<Party[]>([]);
@@ -93,9 +87,8 @@ export default function ReportsPage() {
   const [filters, setFilters] = useState({ range: "this_month", startDate: "", endDate: "", partyType: "all", partyId: "" });
 
   useEffect(() => {
-    Promise.all([api.reports(), api.suppliers(), api.customers()])
-      .then(([reports, supplierRows, customerRows]) => {
-        setData(reports);
+    Promise.all([api.suppliers(), api.customers()])
+      .then(([supplierRows, customerRows]) => {
         setSuppliers(supplierRows);
         setCustomers(customerRows);
       })
@@ -103,11 +96,9 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
+    if (!shouldAutoGenerate(filters)) return;
     void generateBillingReport(filters);
-  }, []);
-
-  const totalDebit = useMemo(() => data.financialLedger.reduce((sum, row) => sum + Number(row.debit), 0), [data.financialLedger]);
-  const totalCredit = useMemo(() => data.financialLedger.reduce((sum, row) => sum + Number(row.credit), 0), [data.financialLedger]);
+  }, [filters]);
 
   async function runDownload(key: string, path: string, filename: string) {
     try {
@@ -134,52 +125,24 @@ export default function ReportsPage() {
     }
   }
 
-  const partyOptions = filters.partyType === "supplier"
-    ? suppliers.map((row) => ({ label: row.name, value: row.id }))
-    : filters.partyType === "customer"
-      ? customers.map((row) => ({ label: row.name, value: row.id }))
-      : [];
+  const partyOptions = useMemo(() => {
+    if (filters.partyType === "supplier") return suppliers.map((row) => ({ label: row.name, value: row.id }));
+    if (filters.partyType === "customer") return customers.map((row) => ({ label: row.name, value: row.id }));
+    return [];
+  }, [customers, filters.partyType, suppliers]);
 
-  const printUrl = buildPrintQuery(filters);
   const pdfPreviewUrl = buildPdfQuery(filters);
   const pdfDownloadPath = buildPdfDownloadPath(filters);
+  const waitingForSelection = !shouldAutoGenerate(filters);
 
   return (
     <div className="space-y-4">
       <PageHeader title={t("reportsTitle", language)} subtitle={t("reportsSubtitle", language)} />
 
-      <Card className="bg-brand-600 text-white">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Billing</p>
-            <h2 className="mt-2 text-xl font-bold">Generate Professional Bill</h2>
-            <p className="mt-1 text-sm text-white/80">Preview and download a PDF bill using your existing buyer, seller, item, quantity, and price data.</p>
-          </div>
-          <Link href={pdfPreviewUrl} className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-brand-700 shadow-sm">
-            Preview PDF
-          </Link>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="bg-white/95"><p className="text-sm text-slate-500">Today Entries</p><p className="mt-2 text-2xl font-bold">{formatNumber(data.dailyCount)}</p></Card>
-        <Card className="bg-white/95"><p className="text-sm text-slate-500">Month Entries</p><p className="mt-2 text-2xl font-bold">{formatNumber(data.monthlyCount)}</p></Card>
-        <Card className="bg-white/95"><p className="text-sm text-slate-500">Debit</p><p className="mt-2 text-2xl font-bold text-success">{formatCurrency(totalDebit)}</p></Card>
-        <Card className="bg-white/95"><p className="text-sm text-slate-500">Credit</p><p className="mt-2 text-2xl font-bold text-warning">{formatCurrency(totalCredit)}</p></Card>
-      </div>
-
       <Card className="bg-white/95">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold">Billing Statement</h2>
-            <p className="mt-1 text-sm text-slate-500">Generate professional transaction bills by custom date range, last week, month, year, supplier, customer, or all records.</p>
-          </div>
-          <div className="flex gap-2">
-            <Link href={pdfPreviewUrl} className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm">
-              Preview PDF
-            </Link>
-            <Button type="button" className="w-auto bg-brand-600" loading={loadingKey === "statement-pdf"} loadingText="Preparing..." onClick={() => runDownload("statement-pdf", pdfDownloadPath, "billing-statement.pdf")}>Download PDF</Button>
-          </div>
+          <h2 className="text-lg font-bold">Billing Statement</h2>
+          {billingLoading ? <span className="text-xs font-semibold text-brand-500">Updating...</span> : null}
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -218,14 +181,19 @@ export default function ReportsPage() {
           ) : null}
         </div>
 
-        <div className="mt-4 flex gap-2">
-          <Button type="button" className="w-auto" loading={billingLoading} loadingText="Generating..." onClick={() => generateBillingReport(filters)}>Generate Statement</Button>
-          <Button type="button" className="w-auto bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900" onClick={() => { const reset = { range: "this_month", startDate: "", endDate: "", partyType: "all", partyId: "" }; setFilters(reset); void generateBillingReport(reset); }}>Reset</Button>
-          <Button type="button" className="w-auto bg-slate-700 hover:bg-slate-800" onClick={() => window.open(printUrl, "_blank")}>Open HTML View</Button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href={pdfPreviewUrl} className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md">
+            Preview PDF
+          </Link>
+          <Button type="button" className="w-auto bg-brand-600" loading={loadingKey === "statement-pdf"} loadingText="Preparing..." onClick={() => runDownload("statement-pdf", pdfDownloadPath, "billing-statement.pdf")}>Download PDF</Button>
+          <Button type="button" className="w-auto bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900" onClick={() => setFilters({ range: "this_month", startDate: "", endDate: "", partyType: "all", partyId: "" })}>Reset</Button>
         </div>
 
+        {waitingForSelection ? <p className="mt-3 text-sm text-slate-500">Select the remaining filter to update the bill.</p> : null}
+        {message ? <p className="mt-3 text-sm text-slate-500">{message}</p> : null}
+
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <div className="rounded-2xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Transactions</p><p className="mt-1 text-lg font-bold text-ink">{formatNumber(billing.summary.totalTransactions)}</p></div>
+          <div className="rounded-2xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Total Entries</p><p className="mt-1 text-lg font-bold text-ink">{formatNumber(billing.summary.totalTransactions)}</p></div>
           <div className="rounded-2xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Total Qty</p><p className="mt-1 text-lg font-bold text-ink">{formatNumber(billing.summary.totalQuantity)}</p></div>
           <div className="rounded-2xl bg-emerald-50 p-3"><p className="text-xs text-emerald-700">Total Buy</p><p className="mt-1 text-lg font-bold text-emerald-700">{formatCurrency(billing.summary.totalDebit)}</p></div>
           <div className="rounded-2xl bg-rose-50 p-3"><p className="text-xs text-rose-700">Total Sell</p><p className="mt-1 text-lg font-bold text-rose-700">{formatCurrency(billing.summary.totalCredit)}</p></div>
@@ -254,18 +222,26 @@ export default function ReportsPage() {
                     </div>
                   </div>
                   <div className="mt-3 grid gap-2 text-sm text-slate-600">
-                    {transaction.items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2">
-                        <span>{item.product.name}</span>
-                        <span className="font-semibold text-ink">{formatNumber(item.quantity)}</span>
-                      </div>
-                    ))}
+                    {transaction.items.map((item) => {
+                      const unitPrice = Number(item.pricePerUnit || 0);
+                      const itemAmount = Number(item.quantity || 0) * unitPrice;
+                      return (
+                        <div key={item.id} className="rounded-2xl bg-slate-50 px-3 py-2">
+                          <div className="flex items-start justify-between gap-3">
+                            <span className="font-medium text-ink">{item.product.name}</span>
+                            <div className="text-right">
+                              <p className="text-xs text-slate-500">Qty {formatNumber(item.quantity)} x {formatNumber(unitPrice)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                   <p className="mt-3 text-xs text-slate-500">Updated {formatDate(transaction.updatedAt)}</p>
                 </div>
               );
             })}
-            {!billing.transactions.length && !billingLoading ? <p className="text-sm text-slate-500">No statement rows found for the selected filters.</p> : null}
+            {!billing.transactions.length && !billingLoading && !waitingForSelection ? <p className="text-sm text-slate-500">No statement rows found for the selected filters.</p> : null}
           </div>
         </div>
       </Card>
@@ -277,9 +253,9 @@ export default function ReportsPage() {
           <Button type="button" className="bg-slate-900 hover:bg-slate-800" loading={loadingKey === "excel"} loadingText="Preparing..." onClick={() => runDownload("excel", "/reports/export?format=excel", "inventory-report.csv")}>Export Excel CSV</Button>
           <Button type="button" className="bg-brand-600 hover:bg-brand-700" loading={loadingKey === "export-pdf"} loadingText="Preparing..." onClick={() => runDownload("export-pdf", pdfDownloadPath, "billing-statement.pdf")}>Download Billing PDF</Button>
         </div>
-        {message ? <p className="mt-3 text-sm text-slate-500">{message}</p> : null}
       </Card>
     </div>
   );
 }
+
 

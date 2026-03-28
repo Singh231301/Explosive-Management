@@ -149,15 +149,21 @@ async function buildBillingReport(query: BillingQuery) {
   const mappedTransactions = transactions.map((row) => {
     const base = mapTransactionRecord(row);
     const ledger = row.financialLedger[0];
+    const computedAmount = base.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.pricePerUnit || 0), 0);
+    const ledgerAmount = Number(ledger?.debit || ledger?.credit || 0);
     return {
       ...base,
-      totalAmount: Number(ledger?.debit || ledger?.credit || 0)
+      totalAmount: ledgerAmount || computedAmount
     };
   });
 
   const totalQuantity = mappedTransactions.reduce((sum, row) => sum + Number(row.totalQuantity || 0), 0);
-  const totalDebit = transactions.reduce((sum, row) => sum + Number(row.financialLedger[0]?.debit || 0), 0);
-  const totalCredit = transactions.reduce((sum, row) => sum + Number(row.financialLedger[0]?.credit || 0), 0);
+  const totalDebit = mappedTransactions
+    .filter((row) => row.type === "PURCHASE")
+    .reduce((sum, row) => sum + Number(row.totalAmount || 0), 0);
+  const totalCredit = mappedTransactions
+    .filter((row) => row.type === "USAGE")
+    .reduce((sum, row) => sum + Number(row.totalAmount || 0), 0);
   const partyName = await resolvePartyLabel(query.partyType, query.partyId);
 
   return {
@@ -297,6 +303,3 @@ export async function getBillingReportPdf(query: BillingQuery) {
 
   return pdf.save();
 }
-
-
-

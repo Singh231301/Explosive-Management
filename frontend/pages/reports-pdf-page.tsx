@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { apiFileUrl, getToken } from "@/lib/api";
 
 export default function ReportsPdfPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [pdfUrl, setPdfUrl] = useState("");
   const [loading, setLoading] = useState(true);
@@ -62,9 +63,14 @@ export default function ReportsPdfPage() {
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white p-4 shadow-soft">
-          <div>
-            <h1 className="text-xl font-bold text-ink">Billing PDF Preview</h1>
-            <p className="mt-1 text-sm text-slate-500">Preview the generated bill and download it as a PDF.</p>
+          <div className="flex items-center gap-3">
+            <Button type="button" className="w-auto bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900" onClick={() => router.back()}>
+              Back
+            </Button>
+            <div>
+              <h1 className="text-xl font-bold text-ink">Billing PDF Preview</h1>
+              <p className="mt-1 text-sm text-slate-500">Preview the generated bill and download it as a PDF.</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button type="button" className="w-auto bg-slate-900 hover:bg-slate-800" onClick={() => window.close()}>Close</Button>
@@ -81,3 +87,4 @@ export default function ReportsPdfPage() {
     </div>
   );
 }
+

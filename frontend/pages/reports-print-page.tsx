@@ -88,12 +88,20 @@ export default function PrintReportPage() {
                 </div>
 
                 <div className="mt-3 space-y-2">
-                  {transaction.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2">
-                      <span>{item.product.name}</span>
-                      <span className="font-semibold">{formatNumber(item.quantity)}</span>
-                    </div>
-                  ))}
+                  {transaction.items.map((item) => {
+                    const unitPrice = Number(item.pricePerUnit || 0);
+                    const itemAmount = Number(item.quantity || 0) * unitPrice;
+                    return (
+                      <div key={item.id} className="rounded-2xl bg-slate-50 px-3 py-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <span>{item.product.name}</span>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-500">Qty {formatNumber(item.quantity)} x {formatNumber(unitPrice)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -104,3 +112,5 @@ export default function PrintReportPage() {
     </div>
   );
 }
+
+
