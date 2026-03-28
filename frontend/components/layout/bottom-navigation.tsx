@@ -8,7 +8,7 @@ const items = [
   { href: "/inventory", label: "Stock" },
   { href: "/purchase", label: "Buy" },
   { href: "/usage", label: "Sell" },
-  { href: "/transactions", label: "Edit" },
+  { href: "/reports", label: "Bill" },
   { href: "/settings", label: "Profile" }
 ];
 

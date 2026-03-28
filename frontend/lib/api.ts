@@ -1,4 +1,4 @@
-import type { DashboardData, InventoryRow, PaginatedTransactions, Party, Product, ReportsData, SessionUser, TransactionRecord } from "@/lib/types";
+import type { BillingReport, DashboardData, InventoryRow, PaginatedTransactions, Party, Product, ReportsData, SessionUser, TransactionRecord } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api";
 const TOKEN_KEY = "explosive_token";
@@ -47,6 +47,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return result.data as T;
 }
 
+function toQuery(params: Record<string, string | number | undefined>) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === "") return;
+    search.set(key, String(value));
+  });
+  const query = search.toString();
+  return query ? `?${query}` : "";
+}
+
 export const api = {
   login: (payload: { email: string; password: string }) => request<{ token: string; user: SessionUser }>("/auth/login", { method: "POST", body: JSON.stringify(payload) }),
   dashboard: () => request<DashboardData>("/inventory/dashboard"),
@@ -70,7 +80,8 @@ export const api = {
   createTransaction: (payload: unknown) => request<TransactionRecord>("/transactions", { method: "POST", body: JSON.stringify(payload) }),
   updateTransaction: (id: string, payload: unknown) => request<TransactionRecord>(`/transactions/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteTransaction: (id: string) => request<TransactionRecord>(`/transactions/${id}`, { method: "DELETE" }),
-  reports: () => request<ReportsData>("/reports")
+  reports: () => request<ReportsData>("/reports"),
+  billingReport: (params: { range?: string; startDate?: string; endDate?: string; partyType?: string; partyId?: string }) => request<BillingReport>(`/reports/billing${toQuery(params)}`)
 };
 
 export function apiFileUrl(path: string) {

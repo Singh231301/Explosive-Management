@@ -54,6 +54,7 @@ export type TransactionRecord = {
   notes?: string | null;
   warehouseId?: string;
   totalQuantity?: number;
+  totalAmount?: number;
   items: TransactionItem[];
 };
 
@@ -74,4 +75,23 @@ export type ReportsData = {
   monthlyCount: number;
   financialLedger: Array<{ debit: number; credit: number }>;
   inventory: Array<{ id: string; quantity: number; product: { name: string } }>;
+};
+
+export type BillingReport = {
+  filters: {
+    range: string;
+    startDate: string;
+    endDate: string;
+    label: string;
+    partyType: string;
+    partyName: string;
+  };
+  summary: {
+    totalTransactions: number;
+    totalQuantity: number;
+    totalDebit: number;
+    totalCredit: number;
+    netAmount: number;
+  };
+  transactions: TransactionRecord[];
 };
