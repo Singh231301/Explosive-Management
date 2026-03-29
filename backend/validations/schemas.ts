@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { ProductUnit, TransactionType } from "@prisma/client";
 
 export const loginSchema = z.object({
@@ -16,6 +16,11 @@ export const partySchema = z.object({
   name: z.string().min(2),
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable()
+});
+
+export const warehouseSchema = z.object({
+  name: z.string().min(2),
+  location: z.string().optional().nullable()
 });
 
 export const transactionItemSchema = z.object({

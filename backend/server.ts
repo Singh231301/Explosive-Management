@@ -12,6 +12,7 @@ import transactionsRoutes from "@/routes/transactions-route";
 import reportsRoutes from "@/routes/reports-route";
 import reportsExportRoutes from "@/routes/reports-export-route";
 import backupRoutes from "@/routes/backup-route";
+import warehousesRoutes from "@/routes/warehouses-route";
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -26,6 +27,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/suppliers", suppliersRoutes);
 app.use("/api/customers", customersRoutes);
+app.use("/api/warehouses", warehousesRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/transactions", transactionsRoutes);
 app.use("/api/reports", reportsRoutes);

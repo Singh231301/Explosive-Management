@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/layout/language-provider";
@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ProductForm } from "@/components/forms/product-form";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useRequireAuth } from "@/lib/auth";
 import { t } from "@/lib/i18n";
@@ -17,6 +18,8 @@ export default function ProductsPage() {
   const { language } = useLanguage();
   const { showToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     api.products().then(setProducts).catch(() => undefined);
@@ -36,14 +39,18 @@ export default function ProductsPage() {
     }
   }
 
-  async function removeProduct(id: string) {
-    if (!window.confirm("Delete this product?")) return;
+  async function removeProduct() {
+    if (!deleteTarget) return;
     try {
-      await api.deleteProduct(id);
-      setProducts((current) => current.filter((row) => row.id !== id));
+      setDeletingId(deleteTarget.id);
+      await api.deleteProduct(deleteTarget.id);
+      setProducts((current) => current.filter((row) => row.id !== deleteTarget.id));
+      setDeleteTarget(null);
       showToast("Product deleted successfully", "success");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not delete product", "error");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -61,13 +68,25 @@ export default function ProductsPage() {
                 {product.description ? <p className="mt-1 text-sm text-slate-500">{product.description}</p> : null}
               </div>
               <div className="flex gap-2">
-                <Button type="button" className="w-auto bg-slate-900 px-3 py-2" onClick={() => editProduct(product)}>Edit</Button>
-                <Button type="button" className="w-auto bg-danger px-3 py-2" onClick={() => removeProduct(product.id)}>Delete</Button>
+                <Button type="button" className="w-auto min-w-0 bg-slate-900 hover:bg-slate-800" onClick={() => editProduct(product)}>Edit</Button>
+                <Button type="button" className="w-auto min-w-0 bg-danger hover:bg-rose-700" onClick={() => setDeleteTarget(product)}>Delete</Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete product?"
+        description={`This will permanently remove ${deleteTarget?.name || "this product"}.`}
+        confirmLabel="Delete"
+        cancelLabel={t("cancel", language)}
+        tone="danger"
+        loading={deletingId === deleteTarget?.id}
+        onConfirm={removeProduct}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

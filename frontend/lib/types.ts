@@ -1,4 +1,4 @@
-﻿export type SessionUser = {
+export type SessionUser = {
   id: string;
   name: string;
   email: string;
@@ -17,6 +17,12 @@ export type Party = {
   name: string;
   phone?: string | null;
   address?: string | null;
+};
+
+export type Warehouse = {
+  id: string;
+  name: string;
+  location?: string | null;
 };
 
 export type InventoryRow = {
@@ -46,12 +52,25 @@ export type TransactionRecord = {
   type: string;
   referenceNo: string;
   createdAt: string;
+  updatedAt: string;
   supplierId?: string | null;
   customerId?: string | null;
+  supplierName?: string | null;
+  customerName?: string | null;
   notes?: string | null;
   warehouseId?: string;
+  warehouseName?: string | null;
   totalQuantity?: number;
+  totalAmount?: number;
   items: TransactionItem[];
+};
+
+export type PaginatedTransactions = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  items: TransactionRecord[];
 };
 
 export type DashboardData = {
@@ -63,4 +82,25 @@ export type ReportsData = {
   monthlyCount: number;
   financialLedger: Array<{ debit: number; credit: number }>;
   inventory: Array<{ id: string; quantity: number; product: { name: string } }>;
+};
+
+export type BillingReport = {
+  filters: {
+    range: string;
+    startDate: string;
+    endDate: string;
+    label: string;
+    partyType: string;
+    partyName: string;
+    warehouseId?: string;
+    warehouseName?: string;
+  };
+  summary: {
+    totalTransactions: number;
+    totalQuantity: number;
+    totalDebit: number;
+    totalCredit: number;
+    netAmount: number;
+  };
+  transactions: TransactionRecord[];
 };

@@ -58,7 +58,7 @@ export default function LoginPage() {
               <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
             </div>
             {error ? <p className="text-sm font-medium text-danger">{error}</p> : null}
-            <Button disabled={loading}>{loading ? "Please wait..." : t("login", language)}</Button>
+            <Button type="submit" loading={loading} loadingText="Please wait...">{t("login", language)}</Button>
           </Form>
           <p className="mt-4 text-xs text-slate-500">Demo login: admin@magazine.local / admin123</p>
         </Card>

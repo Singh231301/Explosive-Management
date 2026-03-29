@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -7,9 +7,9 @@ const items = [
   { href: "/dashboard", label: "Home" },
   { href: "/inventory", label: "Stock" },
   { href: "/purchase", label: "Buy" },
-  { href: "/usage", label: "Use" },
-  { href: "/transactions", label: "Edit" },
-  { href: "/settings", label: "Profile" }
+  { href: "/usage", label: "Sell" },
+  { href: "/reports", label: "Bill" },
+  { href: "/transactions", label: "Txn" }
 ];
 
 export function BottomNavigation() {

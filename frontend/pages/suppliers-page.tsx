@@ -1,12 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/components/layout/language-provider";
 import { useToast } from "@/components/layout/toast-provider";
 import { PageHeader } from "@/components/layout/page-header";
 import { MasterDataForm } from "@/components/forms/master-data-form";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { PartyEditDialog } from "@/components/ui/party-edit-dialog";
+import { PartyHistoryList } from "@/components/ui/party-history-list";
 import { api } from "@/lib/api";
 import { useRequireAuth } from "@/lib/auth";
 import { t } from "@/lib/i18n";
@@ -17,33 +18,42 @@ export default function SuppliersPage() {
   const { language } = useLanguage();
   const { showToast } = useToast();
   const [suppliers, setSuppliers] = useState<Party[]>([]);
+  const [editTarget, setEditTarget] = useState<Party | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Party | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     api.suppliers().then(setSuppliers).catch(() => undefined);
   }, []);
 
-  async function editSupplier(party: Party) {
+  async function editSupplier(payload: { name: string; phone: string; address: string }) {
+    if (!editTarget) return;
     try {
-      const name = window.prompt("Supplier name", party.name);
-      if (!name) return;
-      const phone = window.prompt("Phone", party.phone || "") || "";
-      const address = window.prompt("Address", party.address || "") || "";
-      const updated = await api.updateSupplier(party.id, { name, phone, address });
-      setSuppliers((current) => current.map((row) => (row.id === party.id ? updated : row)));
+      setSavingEdit(true);
+      const updated = await api.updateSupplier(editTarget.id, payload);
+      setSuppliers((current) => current.map((row) => (row.id === editTarget.id ? updated : row)));
+      setEditTarget(null);
       showToast("Supplier updated successfully", "success");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not update supplier", "error");
+    } finally {
+      setSavingEdit(false);
     }
   }
 
-  async function removeSupplier(id: string) {
-    if (!window.confirm("Delete this supplier?")) return;
+  async function removeSupplier() {
+    if (!deleteTarget) return;
     try {
-      await api.deleteSupplier(id);
-      setSuppliers((current) => current.filter((row) => row.id !== id));
+      setDeletingId(deleteTarget.id);
+      await api.deleteSupplier(deleteTarget.id);
+      setSuppliers((current) => current.filter((row) => row.id !== deleteTarget.id));
+      setDeleteTarget(null);
       showToast("Supplier deleted successfully", "success");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not delete supplier", "error");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -51,23 +61,34 @@ export default function SuppliersPage() {
     <div className="space-y-4">
       <PageHeader title={t("suppliersTitle", language)} subtitle={t("suppliersSubtitle", language)} />
       <MasterDataForm resource="suppliers" title="Add Supplier" placeholders={{ name: "Supplier name", phone: "Phone", address: "Address" }} onSaved={(party) => setSuppliers((current) => [party, ...current])} />
-      <div className="space-y-3">
-        {suppliers.map((party) => (
-          <Card key={party.id} className="bg-white/95">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-lg font-bold">{party.name}</p>
-                <p className="text-sm text-slate-500">{party.phone || "-"}</p>
-                <p className="mt-1 text-sm text-slate-500">{party.address || "-"}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button type="button" className="w-auto bg-slate-900 px-3 py-2" onClick={() => editSupplier(party)}>Edit</Button>
-                <Button type="button" className="w-auto bg-danger px-3 py-2" onClick={() => removeSupplier(party.id)}>Delete</Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <PartyHistoryList
+        parties={suppliers}
+        kind="supplier"
+        onEdit={setEditTarget}
+        onDelete={setDeleteTarget}
+        loadTransactions={(partyId, page) => api.supplierTransactions(partyId, page, 10)}
+      />
+
+      <PartyEditDialog
+        open={Boolean(editTarget)}
+        title="Edit Supplier"
+        saving={savingEdit}
+        party={editTarget}
+        onSave={editSupplier}
+        onClose={() => setEditTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete supplier?"
+        description={`This will permanently remove ${deleteTarget?.name || "this supplier"}.`}
+        confirmLabel="Delete"
+        cancelLabel={t("cancel", language)}
+        tone="danger"
+        loading={deletingId === deleteTarget?.id}
+        onConfirm={removeSupplier}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
