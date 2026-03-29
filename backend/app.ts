@@ -4,18 +4,18 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import { ZodError } from "zod";
-import authRoutes from "@/routes/auth-login-route";
-import backupRoutes from "@/routes/backup-route";
-import customersRoutes from "@/routes/customers-route";
-import inventoryRoutes from "@/routes/inventory-route";
-import productsRoutes from "@/routes/products-route";
-import reportsExportRoutes from "@/routes/reports-export-route";
-import reportsRoutes from "@/routes/reports-route";
-import suppliersRoutes from "@/routes/suppliers-route";
-import transactionsRoutes from "@/routes/transactions-route";
-import usersRoutes from "@/routes/users-route";
-import warehousesRoutes from "@/routes/warehouses-route";
-import { HttpError } from "@/utils/http-error";
+import authRoutes from "./routes/auth-login-route";
+import backupRoutes from "./routes/backup-route";
+import customersRoutes from "./routes/customers-route";
+import inventoryRoutes from "./routes/inventory-route";
+import productsRoutes from "./routes/products-route";
+import reportsExportRoutes from "./routes/reports-export-route";
+import reportsRoutes from "./routes/reports-route";
+import suppliersRoutes from "./routes/suppliers-route";
+import transactionsRoutes from "./routes/transactions-route";
+import usersRoutes from "./routes/users-route";
+import warehousesRoutes from "./routes/warehouses-route";
+import { HttpError } from "./utils/http-error";
 
 function getAllowedOrigins() {
   return (process.env.FRONTEND_URL || "http://localhost:3000")
@@ -101,3 +101,4 @@ export function createApp() {
 const app = createApp();
 
 export default app;
+

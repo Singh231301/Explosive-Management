@@ -1,8 +1,8 @@
 import { UserRole } from "@prisma/client";
-import { hashPassword } from "@/auth/password";
-import { prisma } from "@/db/prisma";
-import { logAuditEvent } from "@/utils/audit-log";
-import { HttpError, notFound } from "@/utils/http-error";
+import { hashPassword } from "../auth/password";
+import { prisma } from "../db/prisma";
+import { logAuditEvent } from "../utils/audit-log";
+import { HttpError, notFound } from "../utils/http-error";
 
 function toSafeUser(user: { id: string; name: string; email: string; role: UserRole; createdAt: Date; updatedAt: Date }) {
   return {
@@ -98,3 +98,4 @@ export async function updateUserRole(id: string, role: UserRole) {
   logAuditEvent("user.role_changed", { userId: updated.id, email: updated.email, role: updated.role });
   return toSafeUser(updated);
 }
+

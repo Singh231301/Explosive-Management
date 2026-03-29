@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response, RequestHandler } from "express";
 import { UserRole } from "@prisma/client";
-import { verifyAccessToken } from "@/auth/session";
+import { verifyAccessToken } from "./session";
 
 export type AuthenticatedRequest = Request & {
   user?: {
@@ -39,3 +39,4 @@ export function requireRole(...roles: UserRole[]): RequestHandler {
     next();
   };
 }
+

@@ -1,6 +1,6 @@
-import { prisma } from "@/db/prisma";
-import { comparePassword } from "@/auth/password";
-import { unauthorized } from "@/utils/http-error";
+import { prisma } from "../db/prisma";
+import { comparePassword } from "../auth/password";
+import { unauthorized } from "../utils/http-error";
 
 export async function loginUser(email: string, password: string) {
   const user = await prisma.user.findFirst({ where: { email, deletedAt: null } });
@@ -9,3 +9,4 @@ export async function loginUser(email: string, password: string) {
   if (!valid) throw unauthorized("Invalid email or password");
   return user;
 }
+

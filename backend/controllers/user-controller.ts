@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { createUserSchema, updateUserPasswordSchema, updateUserRoleSchema } from "@/validations/schemas";
-import { createUser, listUsers, updateUserPassword, updateUserRole } from "@/services/user-service";
+import { createUserSchema, updateUserPasswordSchema, updateUserRoleSchema } from "../validations/schemas";
+import { createUser, listUsers, updateUserPassword, updateUserRole } from "../services/user-service";
 
 function getId(req: Request) {
   return String(req.params.id || "");
@@ -24,3 +24,4 @@ export async function updateUserRoleController(req: Request, res: Response) {
   const input = updateUserRoleSchema.parse(req.body);
   res.json({ success: true, data: await updateUserRole(getId(req), input.role) });
 }
+

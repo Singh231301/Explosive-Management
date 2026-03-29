@@ -1,6 +1,6 @@
-﻿import type { Response } from "express";
-import type { AuthenticatedRequest } from "@/auth/guard";
-import { createInventoryTransaction, deleteInventoryTransaction, listTransactions, updateInventoryTransaction } from "@/services/transaction-service";
+import type { Response } from "express";
+import type { AuthenticatedRequest } from "../auth/guard";
+import { createInventoryTransaction, deleteInventoryTransaction, listTransactions, updateInventoryTransaction } from "../services/transaction-service";
 
 function getId(req: AuthenticatedRequest) {
   return String(req.params.id || "");
@@ -21,3 +21,4 @@ export async function updateTransactionController(req: AuthenticatedRequest, res
 export async function deleteTransactionController(req: AuthenticatedRequest, res: Response) {
   res.json({ success: true, data: await deleteInventoryTransaction(getId(req)) });
 }
+

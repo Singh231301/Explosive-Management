@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth, requireRole } from "@/auth/guard";
-import { asyncRoute } from "@/utils/async-route";
-import { createUserController, listUsersController, updateUserPasswordController, updateUserRoleController } from "@/controllers/user-controller";
+import { requireAuth, requireRole } from "../auth/guard";
+import { asyncRoute } from "../utils/async-route";
+import { createUserController, listUsersController, updateUserPasswordController, updateUserRoleController } from "../controllers/user-controller";
 
 const router = Router();
 
@@ -11,3 +11,4 @@ router.put("/:id/password", requireAuth, requireRole("ADMIN"), asyncRoute(update
 router.put("/:id/role", requireAuth, requireRole("ADMIN"), asyncRoute(updateUserRoleController));
 
 export default router;
+

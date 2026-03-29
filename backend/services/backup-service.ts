@@ -1,4 +1,4 @@
-import { prisma } from "@/db/prisma";
+import { prisma } from "../db/prisma";
 
 function toCsvRow(values: Array<string | number | null | undefined>) {
   return values.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(",");
@@ -30,3 +30,4 @@ export async function generateBackupCsv() {
     ...ledger.map((row) => toCsvRow([row.transactionId, row.productId, Number(row.changeQuantity), Number(row.balanceAfter), row.createdAt.toISOString()]))
   ].join("\n");
 }
+

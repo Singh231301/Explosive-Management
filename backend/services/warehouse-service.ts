@@ -1,5 +1,5 @@
-import { prisma } from "@/db/prisma";
-import { warehouseSchema } from "@/validations/schemas";
+import { prisma } from "../db/prisma";
+import { warehouseSchema } from "../validations/schemas";
 
 function normalize(input: unknown) {
   const data = warehouseSchema.parse(input);
@@ -34,3 +34,4 @@ export async function createWarehouse(input: unknown) {
     }
   });
 }
+
