@@ -8,10 +8,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { api, getStoredUser } from "@/lib/api";
 import { useRequireAuth } from "@/lib/auth";
 import { t } from "@/lib/i18n";
-import type { TransactionRecord } from "@/lib/types";
+import type { SessionUser, TransactionRecord } from "@/lib/types";
 import { formatDate, formatNumber } from "@/lib/utils";
 
 function getTransactionTone(transactionType: TransactionRecord["type"]) {
@@ -37,6 +37,7 @@ export default function TransactionsPage() {
   const { language } = useLanguage();
   const { showToast } = useToast();
   const [rows, setRows] = useState<TransactionRecord[]>([]);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -46,10 +47,14 @@ export default function TransactionsPage() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
+    setUser(getStoredUser());
     api.transactions().then(setRows).catch(() => undefined);
   }, []);
 
+  const canManageTransactions = user?.role === "ADMIN" || user?.role === "OPERATOR";
+
   function openEdit(row: TransactionRecord) {
+    if (!canManageTransactions) return;
     const firstItem = row.items[0];
     if (!firstItem?.productId) return;
     setEditingId(row.id);
@@ -101,6 +106,7 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-4">
       <PageHeader title={t("transactionsTitle", language)} subtitle={t("manageTransactionsSubtitle", language)} />
+      {!canManageTransactions ? <Card className="bg-white/95 text-sm text-slate-500">You are in read-only mode. Admin and operator roles can edit or delete transactions.</Card> : null}
       <div className="space-y-3">
         {rows.map((row) => {
           const isEditing = editingId === row.id;
@@ -113,7 +119,6 @@ export default function TransactionsPage() {
                   <p className="font-bold">{row.items[0]?.product.name ? `${row.items[0].product.name}${row.warehouseName ? ` (${row.warehouseName})` : ""}` : row.referenceNo}</p>
                   <p className="text-sm text-slate-500">Qty {formatNumber(row.totalQuantity || 0)} | {formatDate(row.createdAt)}</p>
                   <p className="text-xs text-slate-400">{row.referenceNo}</p>
-                  <p className="text-xs text-slate-400">Warehouse: {row.warehouseName || "-"}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2 text-right">
                   <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${partyTag.className}`}>{partyTag.label}</span>
@@ -121,7 +126,7 @@ export default function TransactionsPage() {
                 </div>
               </div>
 
-              {isEditing ? (
+              {isEditing && canManageTransactions ? (
                 <div className="mt-4 space-y-3 rounded-3xl bg-slate-50 p-3">
                   <Input type="number" step="0.001" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder={t("quantity", language)} />
                   <Input type="number" step="0.01" value={pricePerUnit} onChange={(e) => setPricePerUnit(e.target.value)} placeholder={t("pricePerUnit", language)} />
@@ -131,12 +136,12 @@ export default function TransactionsPage() {
                     <Button type="button" className="w-auto min-w-0 bg-slate-700 hover:bg-slate-800" onClick={() => setEditingId(null)} disabled={savingId === row.id}>{t("cancel", language)}</Button>
                   </div>
                 </div>
-              ) : (
+              ) : canManageTransactions ? (
                 <div className="mt-3 flex gap-2">
                   <Button type="button" className="w-auto min-w-0 bg-slate-900 hover:bg-slate-800" onClick={() => openEdit(row)}>{t("edit", language)}</Button>
                   <Button type="button" className="w-auto min-w-0 bg-danger hover:bg-rose-700" onClick={() => setDeleteId(row.id)}>{t("delete", language)}</Button>
                 </div>
-              )}
+              ) : null}
             </Card>
           );
         })}

@@ -14,7 +14,7 @@ import { t } from "@/lib/i18n";
 import type { Party } from "@/lib/types";
 
 export default function CustomersPage() {
-  useRequireAuth();
+  const auth = useRequireAuth(["ADMIN", "OPERATOR"]);
   const { language } = useLanguage();
   const { showToast } = useToast();
   const [customers, setCustomers] = useState<Party[]>([]);
@@ -24,8 +24,11 @@ export default function CustomersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!auth.authorized) return;
     api.customers().then(setCustomers).catch(() => undefined);
-  }, []);
+  }, [auth.authorized]);
+
+  if (!auth.ready || !auth.authorized) return null;
 
   async function editCustomer(payload: { name: string; phone: string; address: string }) {
     if (!editTarget) return;

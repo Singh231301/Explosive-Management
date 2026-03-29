@@ -10,19 +10,22 @@ import { t } from "@/lib/i18n";
 import type { Party, Product, Warehouse } from "@/lib/types";
 
 export default function UsagePage() {
-  useRequireAuth();
+  const auth = useRequireAuth(["ADMIN", "OPERATOR"]);
   const { language } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Party[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 
   useEffect(() => {
+    if (!auth.authorized) return;
     Promise.all([api.products(), api.customers(), api.warehouses()]).then(([allProducts, allCustomers, allWarehouses]) => {
       setProducts(allProducts);
       setCustomers(allCustomers);
       setWarehouses(allWarehouses);
     }).catch(() => undefined);
-  }, []);
+  }, [auth.authorized]);
+
+  if (!auth.ready || !auth.authorized) return null;
 
   return (
     <div className="space-y-4">

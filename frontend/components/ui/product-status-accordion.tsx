@@ -9,7 +9,7 @@ import { t, type Language } from "@/lib/i18n";
 import type { InventoryRow } from "@/lib/types";
 import { formatDate, formatNumber } from "@/lib/utils";
 
-export function ProductStatusAccordion({ rows, language, onSaveLimit }: { rows: InventoryRow[]; language: Language; onSaveLimit: (productId: string, maxLimit: number | null, lowLimit: number | null) => Promise<void>; }) {
+export function ProductStatusAccordion({ rows, language, onSaveLimit, canEdit = true }: { rows: InventoryRow[]; language: Language; onSaveLimit: (productId: string, maxLimit: number | null, lowLimit: number | null) => Promise<void>; canEdit?: boolean; }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [maxLimit, setMaxLimit] = useState("");
   const [lowLimit, setLowLimit] = useState("");
@@ -17,6 +17,8 @@ export function ProductStatusAccordion({ rows, language, onSaveLimit }: { rows: 
   const activeRow = useMemo(() => rows.find((row) => row.productId === activeId) ?? null, [activeId, rows]);
 
   function openEditor(row: InventoryRow) {
+    if (!canEdit) return;
+
     if (activeId === row.productId) {
       setActiveId(null);
       return;
@@ -45,7 +47,7 @@ export function ProductStatusAccordion({ rows, language, onSaveLimit }: { rows: 
               key={row.id}
               type="button"
               onClick={() => openEditor(row)}
-              className={`rounded-[28px] border p-4 text-left shadow-sm transition ${toneClass} ${isActive ? "ring-2 ring-slate-900/15" : "hover:-translate-y-0.5"}`}
+              className={`rounded-[28px] border p-4 text-left shadow-sm transition ${toneClass} ${isActive ? "ring-2 ring-slate-900/15" : canEdit ? "hover:-translate-y-0.5" : "cursor-default"}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -55,7 +57,7 @@ export function ProductStatusAccordion({ rows, language, onSaveLimit }: { rows: 
                   </div>
                   <p className="mt-2 text-xs text-slate-500">{row.warehouseName}</p>
                 </div>
-                <SlidersHorizontal size={16} className={isActive ? "text-slate-700" : "text-slate-400"} />
+                {canEdit ? <SlidersHorizontal size={16} className={isActive ? "text-slate-700" : "text-slate-400"} /> : null}
               </div>
 
               <div className="mt-4 flex items-end justify-between gap-3">
@@ -72,7 +74,7 @@ export function ProductStatusAccordion({ rows, language, onSaveLimit }: { rows: 
         })}
       </div>
 
-      {activeRow ? (
+      {activeRow && canEdit ? (
         <Card className={`border ${activeRow.isOverLimit ? "border-rose-200 bg-white/95" : activeRow.isLowStock ? "border-amber-200 bg-white/95" : "border-emerald-200 bg-white/95"}`}>
           <div className="flex items-start justify-between gap-3">
             <div>

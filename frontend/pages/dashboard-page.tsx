@@ -75,6 +75,9 @@ export default function DashboardPage() {
       .join("") || "U";
   }, [user]);
 
+  const canEditLimits = user?.role === "ADMIN";
+  const canCreateTransactions = user?.role === "ADMIN" || user?.role === "OPERATOR";
+
   return (
     <div className="space-y-3">
       <Card className="bg-white/95">
@@ -117,12 +120,12 @@ export default function DashboardPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-ink">{t("stockInMagazine", language)}</h2>
-            <p className="mt-1 text-sm text-slate-500">Tap any stock tile to set min and max limits.</p>
+            <p className="mt-1 text-sm text-slate-500">{canEditLimits ? "Tap any stock tile to set min and max limits." : "Live stock overview across your warehouses."}</p>
           </div>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{inventory.length} items</span>
         </div>
         <div className="mt-3">
-          <ProductStatusAccordion rows={inventory} language={language} onSaveLimit={saveLimit} />
+          <ProductStatusAccordion rows={inventory} language={language} onSaveLimit={saveLimit} canEdit={canEditLimits} />
         </div>
       </Card>
 
@@ -132,9 +135,9 @@ export default function DashboardPage() {
           <span className="text-xs font-semibold text-slate-400">Easy Tap</span>
         </div>
         <div className="grid grid-cols-2 gap-2.5">
-          <Link href="/purchase" className={`${actionButtonClass} bg-brand-50 text-brand-700`}>{t("addPurchase", language)}</Link>
-          <Link href="/usage" className={`${actionButtonClass} bg-orange-50 text-orange-700`}>{t("addUsage", language)}</Link>
-          <Link href="/transactions" className={`${actionButtonClass} bg-slate-100 text-slate-800`}>{t("manageTransactions", language)}</Link>
+          {canCreateTransactions ? <Link href="/purchase" className={`${actionButtonClass} bg-brand-50 text-brand-700`}>{t("addPurchase", language)}</Link> : null}
+          {canCreateTransactions ? <Link href="/usage" className={`${actionButtonClass} bg-orange-50 text-orange-700`}>{t("addUsage", language)}</Link> : null}
+          {user?.role === "ADMIN" ? <Link href="/products" className={`${actionButtonClass} bg-slate-100 text-slate-800`}>Add Product</Link> : <Link href="/transactions" className={`${actionButtonClass} bg-slate-100 text-slate-800`}>{t("manageTransactions", language)}</Link>}
           <Link href="/settings" className={`${actionButtonClass} bg-sky-50 text-sky-700`}>{t("myProfile", language)}</Link>
         </div>
       </Card>
@@ -166,4 +169,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 

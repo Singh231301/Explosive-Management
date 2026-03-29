@@ -18,7 +18,7 @@ async function listPartyTransactions(kind: "supplier" | "customer", id: string, 
     prisma.transaction.count({ where }),
     prisma.transaction.findMany({
       where,
-      include: { items: { include: { product: true } }, supplier: true, customer: true },
+      include: { items: { include: { product: true } }, supplier: true, customer: true, warehouse: true },
       orderBy: { createdAt: "desc" },
       skip,
       take: pageSize
@@ -81,3 +81,4 @@ export async function deleteCustomer(id: string) {
 export async function listCustomerTransactions(id: string, page = 1, pageSize = 10) {
   return listPartyTransactions("customer", id, page, pageSize);
 }
+
