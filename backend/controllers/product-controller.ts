@@ -1,5 +1,5 @@
-﻿import type { Request, Response } from "express";
-import { createProduct, deleteProduct, listProducts, updateProduct } from "@/services/product-service";
+import type { Request, Response } from "express";
+import { createProduct, deleteProduct, listProducts, updateProduct } from "../services/product-service";
 
 function getId(req: Request) {
   return String(req.params.id || "");
@@ -20,3 +20,4 @@ export async function updateProductController(req: Request, res: Response) {
 export async function deleteProductController(req: Request, res: Response) {
   res.json({ success: true, data: await deleteProduct(getId(req)) });
 }
+

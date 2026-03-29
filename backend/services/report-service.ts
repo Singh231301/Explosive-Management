@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { startOfDay, startOfMonth } from "@/utils/date";
-import { prisma } from "@/db/prisma";
-import { mapTransactionRecord } from "@/services/transaction-service";
+import { startOfDay, startOfMonth } from "../utils/date";
+import { prisma } from "../db/prisma";
+import { mapTransactionRecord } from "../services/transaction-service";
 
 type BillingQuery = {
   range?: string;
@@ -313,3 +313,4 @@ export async function getBillingReportPdf(query: BillingQuery) {
 
   return pdf.save();
 }
+

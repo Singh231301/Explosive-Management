@@ -1,4 +1,4 @@
-import { prisma } from "@/db/prisma";
+import { prisma } from "../db/prisma";
 
 type LimitRule = {
   maxLimit?: number | null;
@@ -84,3 +84,4 @@ export async function getDashboardMetrics() {
     }))
   };
 }
+

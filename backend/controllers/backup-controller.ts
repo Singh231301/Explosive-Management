@@ -1,8 +1,8 @@
 import type { Response } from "express";
-import type { AuthenticatedRequest } from "@/auth/guard";
-import { getReports } from "@/services/report-service";
-import { generateBackupCsv } from "@/services/backup-service";
-import { logAuditEvent } from "@/utils/audit-log";
+import type { AuthenticatedRequest } from "../auth/guard";
+import { getReports } from "../services/report-service";
+import { generateBackupCsv } from "../services/backup-service";
+import { logAuditEvent } from "../utils/audit-log";
 
 export async function backupController(req: AuthenticatedRequest, res: Response) {
   const csv = await generateBackupCsv();
@@ -28,3 +28,4 @@ export async function reportsExportController(req: AuthenticatedRequest, res: Re
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   return res.send(html);
 }
+

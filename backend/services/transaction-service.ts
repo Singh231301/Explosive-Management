@@ -1,6 +1,6 @@
 import { Prisma, TransactionType } from "@prisma/client";
-import { prisma } from "@/db/prisma";
-import { transactionSchema } from "@/validations/schemas";
+import { prisma } from "../db/prisma";
+import { transactionSchema } from "../validations/schemas";
 
 function signedQuantity(type: TransactionType, quantity: number) {
   if (type === TransactionType.PURCHASE || type === TransactionType.ADJUSTMENT) return quantity;
@@ -157,3 +157,4 @@ export async function listTransactions() {
   const rows = await prisma.transaction.findMany({ where: { deletedAt: null }, include: { items: { include: { product: true } }, supplier: true, customer: true, warehouse: true }, orderBy: { createdAt: "desc" }, take: 50 });
   return rows.map(mapTransactionRecord);
 }
+

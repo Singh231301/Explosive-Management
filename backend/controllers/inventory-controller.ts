@@ -1,5 +1,5 @@
-﻿import type { Request, Response } from "express";
-import { getDashboardMetrics, getInventorySummary, updateInventoryLimit } from "@/services/inventory-service";
+import type { Request, Response } from "express";
+import { getDashboardMetrics, getInventorySummary, updateInventoryLimit } from "../services/inventory-service";
 
 export async function inventorySummaryController(_req: Request, res: Response) {
   res.json({ success: true, data: await getInventorySummary() });
@@ -16,3 +16,4 @@ export async function inventoryLimitController(req: Request, res: Response) {
 
   res.json({ success: true, data: await updateInventoryLimit(productId, maxLimit, lowLimit) });
 }
+

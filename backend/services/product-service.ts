@@ -1,5 +1,5 @@
-﻿import { prisma } from "@/db/prisma";
-import { productSchema } from "@/validations/schemas";
+import { prisma } from "../db/prisma";
+import { productSchema } from "../validations/schemas";
 
 export async function listProducts() {
   return prisma.product.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" } });
@@ -49,3 +49,4 @@ export async function deleteProduct(id: string) {
 
   return prisma.product.update({ where: { id }, data: { deletedAt: new Date() } });
 }
+

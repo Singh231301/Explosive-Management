@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getBillingReport, getBillingReportPdf, getReports } from "@/services/report-service";
+import { getBillingReport, getBillingReportPdf, getReports } from "../services/report-service";
 
 export async function reportsController(_req: Request, res: Response) {
   res.json({ success: true, data: await getReports() });
@@ -35,3 +35,4 @@ export async function billingReportPdfController(req: Request, res: Response) {
   res.setHeader("Content-Disposition", `${disposition}; filename="billing-statement.pdf"`);
   res.send(Buffer.from(pdfBytes));
 }
+

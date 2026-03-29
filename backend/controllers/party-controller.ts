@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { createCustomer, createSupplier, deleteCustomer, deleteSupplier, listCustomers, listCustomerTransactions, listSuppliers, listSupplierTransactions, updateCustomer, updateSupplier } from "@/services/party-service";
+import { createCustomer, createSupplier, deleteCustomer, deleteSupplier, listCustomers, listCustomerTransactions, listSuppliers, listSupplierTransactions, updateCustomer, updateSupplier } from "../services/party-service";
 
 function getId(req: Request) {
   return String(req.params.id || "");
@@ -52,3 +52,4 @@ export async function deleteCustomerController(req: Request, res: Response) {
 export async function listCustomerTransactionsController(req: Request, res: Response) {
   res.json({ success: true, data: await listCustomerTransactions(getId(req), getPage(req), getPageSize(req)) });
 }
+

@@ -1,6 +1,6 @@
-import { prisma } from "@/db/prisma";
-import { mapTransactionRecord } from "@/services/transaction-service";
-import { partySchema } from "@/validations/schemas";
+import { prisma } from "../db/prisma";
+import { mapTransactionRecord } from "../services/transaction-service";
+import { partySchema } from "../validations/schemas";
 
 function normalize(data: { name: string; phone?: string | null; address?: string | null }) {
   return {
@@ -81,4 +81,5 @@ export async function deleteCustomer(id: string) {
 export async function listCustomerTransactions(id: string, page = 1, pageSize = 10) {
   return listPartyTransactions("customer", id, page, pageSize);
 }
+
 
