@@ -60,7 +60,11 @@ export default function LoginPage() {
             {error ? <p className="text-sm font-medium text-danger">{error}</p> : null}
             <Button type="submit" loading={loading} loadingText="Please wait...">{t("login", language)}</Button>
           </Form>
-          <p className="mt-4 text-xs text-slate-500">Demo login: admin@magazine.local / admin123</p>
+          {/* <div className="mt-4 space-y-1 text-xs text-slate-500">
+            <p>Admin: admin@magazine.local / admin123</p>
+            <p>Operator: operator@magazine.local / operator123</p>
+            <p>Auditor: auditor@magazine.local / auditor123</p>
+          </div> */}
         </Card>
       </div>
     </main>

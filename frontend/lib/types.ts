@@ -1,8 +1,19 @@
+export type UserRole = "ADMIN" | "OPERATOR" | "AUDITOR";
+
 export type SessionUser = {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: UserRole;
+};
+
+export type AppUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Product = {

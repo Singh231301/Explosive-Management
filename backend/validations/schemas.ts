@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProductUnit, TransactionType } from "@prisma/client";
+import { ProductUnit, TransactionType, UserRole } from "@prisma/client";
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -21,6 +21,21 @@ export const partySchema = z.object({
 export const warehouseSchema = z.object({
   name: z.string().min(2),
   location: z.string().optional().nullable()
+});
+
+export const createUserSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  password: z.string().min(6),
+  role: z.nativeEnum(UserRole)
+});
+
+export const updateUserPasswordSchema = z.object({
+  password: z.string().min(6)
+});
+
+export const updateUserRoleSchema = z.object({
+  role: z.nativeEnum(UserRole)
 });
 
 export const transactionItemSchema = z.object({

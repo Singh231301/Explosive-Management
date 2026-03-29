@@ -14,7 +14,7 @@ import { t } from "@/lib/i18n";
 import type { Party } from "@/lib/types";
 
 export default function SuppliersPage() {
-  useRequireAuth();
+  const auth = useRequireAuth(["ADMIN", "OPERATOR"]);
   const { language } = useLanguage();
   const { showToast } = useToast();
   const [suppliers, setSuppliers] = useState<Party[]>([]);
@@ -24,8 +24,11 @@ export default function SuppliersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!auth.authorized) return;
     api.suppliers().then(setSuppliers).catch(() => undefined);
-  }, []);
+  }, [auth.authorized]);
+
+  if (!auth.ready || !auth.authorized) return null;
 
   async function editSupplier(payload: { name: string; phone: string; address: string }) {
     if (!editTarget) return;

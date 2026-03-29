@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Input } from "@/components/ui/input";
-import { api, getToken } from "@/lib/api";
+import { api, getStoredUser, getToken } from "@/lib/api";
 import { useRequireAuth } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import type { BillingReport, Party, TransactionRecord, Warehouse } from "@/lib/types";
@@ -88,6 +88,7 @@ export default function ReportsPage() {
   useRequireAuth();
   const { language } = useLanguage();
   const [billing, setBilling] = useState<BillingReport>(initialBilling);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [suppliers, setSuppliers] = useState<Party[]>([]);
   const [customers, setCustomers] = useState<Party[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -97,6 +98,7 @@ export default function ReportsPage() {
   const [filters, setFilters] = useState({ range: "this_month", startDate: "", endDate: "", warehouseId: "", supplierId: "", customerId: "" });
 
   useEffect(() => {
+    setIsAdmin(getStoredUser()?.role === "ADMIN");
     Promise.all([api.suppliers(), api.customers(), api.warehouses()])
       .then(([supplierRows, customerRows, warehouseRows]) => {
         setSuppliers(supplierRows);
@@ -245,15 +247,16 @@ export default function ReportsPage() {
         </div>
       </Card>
 
-      <Card className="bg-white/95">
-        <h2 className="text-lg font-bold">Exports</h2>
-        <div className="mt-3 grid grid-cols-1 gap-3">
-          <Button type="button" loading={loadingKey === "backup"} loadingText="Preparing..." onClick={() => runDownload("backup", "/backup", "daily-backup.csv")}>Download Daily CSV Backup</Button>
-          <Button type="button" className="bg-slate-900 hover:bg-slate-800" loading={loadingKey === "excel"} loadingText="Preparing..." onClick={() => runDownload("excel", "/reports/export?format=excel", "inventory-report.csv")}>Export Excel CSV</Button>
-          <Button type="button" className="bg-brand-600 hover:bg-brand-700" loading={loadingKey === "export-pdf"} loadingText="Preparing..." onClick={() => runDownload("export-pdf", pdfDownloadPath, "billing-statement.pdf")}>Download Billing PDF</Button>
-        </div>
-      </Card>
+      {isAdmin ? (
+        <Card className="bg-white/95">
+          <h2 className="text-lg font-bold">Exports</h2>
+          <div className="mt-3 grid grid-cols-1 gap-3">
+            <Button type="button" loading={loadingKey === "backup"} loadingText="Preparing..." onClick={() => runDownload("backup", "/backup", "daily-backup.csv")}>Download Daily CSV Backup</Button>
+            <Button type="button" className="bg-slate-900 hover:bg-slate-800" loading={loadingKey === "excel"} loadingText="Preparing..." onClick={() => runDownload("excel", "/reports/export?format=excel", "inventory-report.csv")}>Export Excel CSV</Button>
+            <Button type="button" className="bg-brand-600 hover:bg-brand-700" loading={loadingKey === "export-pdf"} loadingText="Preparing..." onClick={() => runDownload("export-pdf", pdfDownloadPath, "billing-statement.pdf")}>Download Billing PDF</Button>
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }
-

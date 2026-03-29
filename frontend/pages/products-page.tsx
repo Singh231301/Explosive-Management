@@ -14,7 +14,7 @@ import { t } from "@/lib/i18n";
 import type { Product } from "@/lib/types";
 
 export default function ProductsPage() {
-  useRequireAuth();
+  const auth = useRequireAuth(["ADMIN"]);
   const { language } = useLanguage();
   const { showToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
@@ -22,8 +22,11 @@ export default function ProductsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!auth.authorized) return;
     api.products().then(setProducts).catch(() => undefined);
-  }, []);
+  }, [auth.authorized]);
+
+  if (!auth.ready || !auth.authorized) return null;
 
   async function editProduct(product: Product) {
     try {
