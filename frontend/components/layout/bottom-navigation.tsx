@@ -9,7 +9,7 @@ const items = [
   { href: "/purchase", label: "Buy" },
   { href: "/usage", label: "Sell" },
   { href: "/reports", label: "Bill" },
-  { href: "/settings", label: "Profile" }
+  { href: "/transactions", label: "Txn" }
 ];
 
 export function BottomNavigation() {

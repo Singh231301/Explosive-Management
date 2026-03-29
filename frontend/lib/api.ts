@@ -83,9 +83,10 @@ export const api = {
   updateTransaction: (id: string, payload: unknown) => request<TransactionRecord>(`/transactions/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteTransaction: (id: string) => request<TransactionRecord>(`/transactions/${id}`, { method: "DELETE" }),
   reports: () => request<ReportsData>("/reports"),
-  billingReport: (params: { range?: string; startDate?: string; endDate?: string; partyType?: string; partyId?: string }) => request<BillingReport>(`/reports/billing${toQuery(params)}`)
+  billingReport: (params: { range?: string; startDate?: string; endDate?: string; partyType?: string; partyId?: string; warehouseId?: string }) => request<BillingReport>(`/reports/billing${toQuery(params)}`)
 };
 
 export function apiFileUrl(path: string) {
   return `${API_BASE_URL}${path}`;
 }
+

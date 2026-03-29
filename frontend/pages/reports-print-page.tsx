@@ -82,7 +82,7 @@ export default function PrintReportPage() {
                     <p className="font-semibold text-ink">{transaction.items[0]?.product.name ? `${transaction.items[0].product.name}${transaction.warehouseName ? ` (${transaction.warehouseName})` : ""}` : transaction.referenceNo}</p>
                     <p className="mt-1 text-slate-600">{getPartyLabel(transaction)}</p>
                     <p className="mt-1 text-xs text-slate-500">{transaction.referenceNo}</p>
-                    <p className="mt-1 text-xs text-slate-500">Updated {formatDate(transaction.updatedAt)}</p>
+
                   </div>
                   <div className="text-right">
                     <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${tone.className}`}>{tone.label}</span>
@@ -90,19 +90,18 @@ export default function PrintReportPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 space-y-2">
-                  {transaction.items.map((item) => {
-                    const unitPrice = Number(item.pricePerUnit || 0);
-                    return (
-                      <div key={item.id} className="rounded-2xl bg-slate-50 px-3 py-2">
-                        <div className="flex items-start justify-end gap-3">
-                          <div className="text-right">
-                            <p className="text-xs text-slate-500">Qty {formatNumber(item.quantity)} x {formatNumber(unitPrice)}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="mt-3 rounded-2xl bg-slate-50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs text-slate-500">Updated {formatDate(transaction.updatedAt)}</p>
+                    <div className="space-y-1 text-right">
+                      {transaction.items.map((item) => {
+                        const unitPrice = Number(item.pricePerUnit || 0);
+                        return (
+                          <p key={item.id} className="text-xs text-slate-500">Qty {formatNumber(item.quantity)} x {formatNumber(unitPrice)}</p>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -113,3 +112,4 @@ export default function PrintReportPage() {
     </div>
   );
 }
+

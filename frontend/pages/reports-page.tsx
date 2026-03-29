@@ -224,21 +224,19 @@ export default function ReportsPage() {
                       <p className="mt-2 text-sm font-semibold text-ink">{formatCurrency(transaction.totalAmount || 0)}</p>
                     </div>
                   </div>
-                  <div className="mt-3 grid gap-2 text-sm text-slate-600">
-                    {transaction.items.map((item) => {
-                      const unitPrice = Number(item.pricePerUnit || 0);
-                      return (
-                        <div key={item.id} className="rounded-2xl bg-slate-50 px-3 py-2">
-                          <div className="flex items-start justify-end gap-3">
-                            <div className="text-right">
-                              <p className="text-xs text-slate-500">Qty {formatNumber(item.quantity)} x {formatNumber(unitPrice)}</p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="mt-3 rounded-2xl bg-slate-50 px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs text-slate-500">Updated {formatDate(transaction.updatedAt)}</p>
+                      <div className="space-y-1 text-right">
+                        {transaction.items.map((item) => {
+                          const unitPrice = Number(item.pricePerUnit || 0);
+                          return (
+                            <p key={item.id} className="text-xs text-slate-500">Qty {formatNumber(item.quantity)} x {formatNumber(unitPrice)}</p>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-3 text-xs text-slate-500">Updated {formatDate(transaction.updatedAt)}</p>
                 </div>
               );
             })}
@@ -258,3 +256,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+
